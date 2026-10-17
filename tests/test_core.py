@@ -115,3 +115,14 @@ def test_every_text_has_both_languages():
     for key, entry in TEXTS.items():
         assert set(entry) == {"sq", "en"}, key
     assert "Kujdes" in t("sq", "warnings")
+
+
+def test_bosch_sheet_without_pref_column_matches_manual_dud():
+    # The manual DUD writes "pce" and marked MSA by hand (no indicator column),
+    # so compare with those two differences taken out.
+    names = dict(core.DEFAULT_COLUMN_NAMES, pref="")
+    xml = core.convert(FIXTURES / "Perkthimi_Bosch_KS 21.xlsx", core.Options("00", "4000", column_names=names)).xml
+    manual = (FIXTURES / "DUDIBOSCH22082026.xml").read_bytes().decode("utf-8")
+    manual = manual.replace("\t\t\t<Preference_code>MSA</Preference_code>\r\n", "")
+    assert xml.replace("PCE<", "pce<") == manual
+    assert "Audi A4 2.0 , 2.7 , =10PCE" in xml  # trailing space before "=" is kept

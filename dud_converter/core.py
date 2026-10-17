@@ -380,10 +380,12 @@ def convert(excel_path, options: Options) -> Result:
         kodi_text = "" if is_blank(kodi) else str(kodi).strip()
         if isinstance(kodi, float) and kodi.is_integer():
             kodi_text = str(int(kodi))
-        desc = "" if is_blank(perkthim) else " ".join(str(perkthim).split())
+        # Keep the text exactly as typed (like Excel's CONCAT), spaces included;
+        # only line breaks are flattened.
+        desc = "" if is_blank(perkthim) else re.sub(r"[\r\n]+", " ", str(perkthim))
         if not desc:
             warnings.append(Warning_("warn_empty", {"row": r, "column": names["perkthim"]}))
-        if kodi_text and not desc.casefold().startswith(kodi_text.casefold()):
+        if kodi_text and not desc.lstrip().casefold().startswith(kodi_text.casefold()):
             desc = f"{kodi_text} - {desc}" if desc else kodi_text
 
         qty = number(r, "sasia", warnings)
