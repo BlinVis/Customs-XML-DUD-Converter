@@ -95,6 +95,8 @@ class Options:
     extended_procedure: str
     column_names: dict = field(default_factory=lambda: dict(DEFAULT_COLUMN_NAMES))
     positive_indicators: list = field(default_factory=lambda: list(DEFAULT_POSITIVE_INDICATORS))
+    # Used only when the sheet has no preference column: origins that get MSA.
+    msa_countries: list = field(default_factory=list)
     constants: dict = field(default_factory=lambda: dict(DEFAULT_CONSTANTS))
 
 
@@ -289,6 +291,55 @@ def list_headers(path) -> list:
     return out
 
 
+@dataclass
+class SheetInfo:
+    sheet_name: str
+    header_row: int
+    headers: list         # header texts of that row, in order
+    found: set            # FIELDS keys whose given name is in that row
+    countries: list       # distinct origin codes (upper case), when the origin column is found
+
+
+def inspect_sheet(path, column_names) -> SheetInfo | None:
+    """Best guess of the header row for live feedback while the user fills in names.
+
+    The row matching the most given names wins; with no matches, the row with
+    the most text cells. None when the workbook has no text at all.
+    """
+    values, _ = _load(path)
+    wanted = {k: normalize_header(column_names.get(k, "")) for k, _ in FIELDS}
+    best = None  # (score, ws, row, headers)
+    for ws in values.worksheets:
+        for r in range(1, min(ws.max_row, HEADER_SCAN_ROWS) + 1):
+            texts = [str(c.value).strip() for c in ws[r] if isinstance(c.value, str) and c.value.strip()]
+            if not texts:
+                continue
+            normalized = {normalize_header(x) for x in texts}
+            matches = sum(1 for n in wanted.values() if n and n in normalized)
+            score = (matches, len(texts))
+            if best is None or score > best[0]:
+                best = (score, ws, r, texts)
+    if best is None:
+        return None
+    _, ws, row, headers = best
+    columns = {}
+    for c in ws[row]:
+        key = normalize_header(c.value)
+        if key and key not in columns:
+            columns[key] = c.column
+    found = {k for k, n in wanted.items() if n and n in columns}
+    countries = []
+    if "origjina" in found:
+        col = columns[wanted["origjina"]]
+        for r in range(row + 1, ws.max_row + 1):
+            v = ws.cell(r, col).value
+            if not is_blank(v):
+                code = str(v).strip().upper()
+                if code not in countries:
+                    countries.append(code)
+    return SheetInfo(ws.title, row, headers, found, countries)
+
+
 def _find_columns(values_wb, column_names):
     """Locate the header row: the first row (any sheet) holding every required name."""
     wanted = {k: normalize_header(column_names.get(k, "")) for k, _ in FIELDS}
@@ -308,14 +359,8 @@ def _find_columns(values_wb, column_names):
             mapping = {k: headers[n] for k, n in wanted.items() if n and n in headers}
             found = sum(1 for k in required if k in mapping)
             if found == len(required):
-                missing_optional = [k for k, req in FIELDS if not req and wanted[k] and k not in mapping]
-                if missing_optional:
-                    raise ConversionError(
-                        "err_columns_missing",
-                        missing=[column_names[k] for k in missing_optional],
-                        sheet=ws.title,
-                        found=[str(c.value).strip() for c in ws[r] if not is_blank(c.value)],
-                    )
+                # Optional columns (article code, MSA indicator) that the sheet
+                # doesn't have are simply not used.
                 return ws.title, r, mapping
             if found and (best is None or found > best[0]):
                 best = (found, ws, r, mapping)
@@ -367,8 +412,18 @@ def convert(excel_path, options: Options) -> Result:
 
     items, warnings, indicator_values = [], [], {}
     total_amount = total_gross = total_net = 0.0
+    msa_countries = set()
     if "pref" not in cols:
-        warnings.append(Warning_("warn_no_pref_column"))
+        for code in options.msa_countries:
+            code = str(code).strip().upper()
+            if not code:
+                continue
+            if code in EU_COUNTRIES:
+                msa_countries.add(code)
+            else:
+                warnings.append(Warning_("warn_msa_country_not_eu", {"country": code}))
+        if not msa_countries:
+            warnings.append(Warning_("warn_no_pref_column"))
 
     max_row = values_wb[sheet_name].max_row
     for r in range(header_row + 1, max_row + 1):
@@ -380,10 +435,12 @@ def convert(excel_path, options: Options) -> Result:
         kodi_text = "" if is_blank(kodi) else str(kodi).strip()
         if isinstance(kodi, float) and kodi.is_integer():
             kodi_text = str(int(kodi))
-        desc = "" if is_blank(perkthim) else " ".join(str(perkthim).split())
+        # Keep the text exactly as typed (like Excel's CONCAT), spaces included;
+        # only line breaks are flattened.
+        desc = "" if is_blank(perkthim) else re.sub(r"[\r\n]+", " ", str(perkthim))
         if not desc:
             warnings.append(Warning_("warn_empty", {"row": r, "column": names["perkthim"]}))
-        if kodi_text and not desc.casefold().startswith(kodi_text.casefold()):
+        if kodi_text and not desc.lstrip().casefold().startswith(kodi_text.casefold()):
             desc = f"{kodi_text} - {desc}" if desc else kodi_text
 
         qty = number(r, "sasia", warnings)
@@ -416,6 +473,8 @@ def convert(excel_path, options: Options) -> Result:
                     warnings.append(Warning_("warn_pref_not_eu", {"row": r, "country": country or "?"}))
             elif ind_key and ind_key not in KNOWN_NEGATIVE_INDICATORS:
                 warnings.append(Warning_("warn_unknown_indicator", {"row": r, "value": str(ind).strip()}))
+        elif country in msa_countries:
+            pref_code = "MSA"
 
         amount_r = round(amount, 2) if amount is not None else None
         total_amount += amount_r or 0

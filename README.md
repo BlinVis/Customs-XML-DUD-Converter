@@ -6,20 +6,18 @@ that the old ASYCUDA client imports (the same file Excel produces from the
 
 ## Si përdoret / How to use
 
-1. Hapni `DUD-Converter.exe` (ose `run_app.bat`). / Open `DUD-Converter.exe` (or `run_app.bat`).
-2. Zgjidhni skedarin Excel. Butoni **Shfaq kolonat** tregon titujt që ka fleta.
-   / Pick the Excel file. **Show Excel columns** lists the headers the sheet has.
-3. Shkruani emrat e kolonave ashtu siç janë në Excel (pa dallim shkronjash të mëdha/vogla).
-   Emrat mbahen mend për herën tjetër. / Type the column names exactly as they appear
-   (not case sensitive). They are remembered for next time.
-4. Përgjigjuni pyetjeve: Precision_1 **00/90**, Extended_customs_procedure **1000/4000**,
-   dhe cilat vlera në kolonën e preferencës do të thonë MSA (p.sh. `Po`, `+`, `Yes`).
-   / Answer: Precision_1 **00/90**, Extended_customs_procedure **1000/4000**, and which values
-   in the preference column mean MSA.
-5. **Krijo XML / Create XML** → `DUDI-<emri i Excel-it>-<DDMMYYYY>.xml`, pranë Excel-it
-   ose në dosjen e zgjedhur. / saved next to the Excel file or in the chosen folder.
+1. Hapni `DUD-Converter.exe` dhe klikoni **Zgjidh skedarin** / open it and click **Choose file**.
+2. Te hapi 2 çdo kolonë duhet të ketë ✓. Nëse ka ✗, zgjidhni titullin e saktë nga lista
+   (mbahet mend për herën tjetër). / In step 2 every column should show ✓; if one shows ✗,
+   pick the right title from the list (remembered for next time).
+3. Zgjidhni **00 / 90** dhe **1000 / 4000**. Për MSA: nëse Excel-i ka kolonë preference, shkruani
+   cilat vlera do të thonë PO (p.sh. `Po`, `+`); nëse s'ka, shënoni vendet e BE-së që marrin MSA.
+   / Pick **00 / 90** and **1000 / 4000**. For MSA: with a preference column, enter the values that
+   mean YES; without one, tick the EU origin countries that get MSA.
+4. **Krijo XML-in / Create the XML** → `DUDI-<emri i Excel-it>-<DDMMYYYY>.xml`, pranë Excel-it ose
+   në dosjen e zgjedhur. / saved next to the Excel file or in the chosen folder.
 
-The result panel shows the item count, MSA count and the totals (amount, gross,
+The result window shows the item count, MSA count and the totals (amount, gross,
 net) so they can be checked against the totals row of the Excel sheet, plus any
 warnings (empty cells, a positive MSA indicator on a non-EU origin, unknown
 indicator values).
@@ -31,6 +29,7 @@ indicator values).
 | Commodity_code | tariff code column (digits only) |
 | Precision_1 / Extended_customs_procedure | your answers |
 | Preference_code | `MSA` only when the indicator is positive **and** the origin is an EU country; otherwise left out |
+| Preference_code, sheet without an indicator column | `MSA` for the origin countries you type in (EU countries only); leave the field empty for no MSA |
 | Country_of_origin_code | origin column (upper case) |
 | Commercial_Description | `perkthim=<sasia>PCE`; the article code is put in front (`<kodi> - perkthim`) when the text doesn't already start with it |
 | Gross_weight_itm / Net_weight_itm | weight columns |
