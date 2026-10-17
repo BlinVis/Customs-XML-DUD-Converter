@@ -291,6 +291,55 @@ def list_headers(path) -> list:
     return out
 
 
+@dataclass
+class SheetInfo:
+    sheet_name: str
+    header_row: int
+    headers: list         # header texts of that row, in order
+    found: set            # FIELDS keys whose given name is in that row
+    countries: list       # distinct origin codes (upper case), when the origin column is found
+
+
+def inspect_sheet(path, column_names) -> SheetInfo | None:
+    """Best guess of the header row for live feedback while the user fills in names.
+
+    The row matching the most given names wins; with no matches, the row with
+    the most text cells. None when the workbook has no text at all.
+    """
+    values, _ = _load(path)
+    wanted = {k: normalize_header(column_names.get(k, "")) for k, _ in FIELDS}
+    best = None  # (score, ws, row, headers)
+    for ws in values.worksheets:
+        for r in range(1, min(ws.max_row, HEADER_SCAN_ROWS) + 1):
+            texts = [str(c.value).strip() for c in ws[r] if isinstance(c.value, str) and c.value.strip()]
+            if not texts:
+                continue
+            normalized = {normalize_header(x) for x in texts}
+            matches = sum(1 for n in wanted.values() if n and n in normalized)
+            score = (matches, len(texts))
+            if best is None or score > best[0]:
+                best = (score, ws, r, texts)
+    if best is None:
+        return None
+    _, ws, row, headers = best
+    columns = {}
+    for c in ws[row]:
+        key = normalize_header(c.value)
+        if key and key not in columns:
+            columns[key] = c.column
+    found = {k for k, n in wanted.items() if n and n in columns}
+    countries = []
+    if "origjina" in found:
+        col = columns[wanted["origjina"]]
+        for r in range(row + 1, ws.max_row + 1):
+            v = ws.cell(r, col).value
+            if not is_blank(v):
+                code = str(v).strip().upper()
+                if code not in countries:
+                    countries.append(code)
+    return SheetInfo(ws.title, row, headers, found, countries)
+
+
 def _find_columns(values_wb, column_names):
     """Locate the header row: the first row (any sheet) holding every required name."""
     wanted = {k: normalize_header(column_names.get(k, "")) for k, _ in FIELDS}
@@ -310,14 +359,8 @@ def _find_columns(values_wb, column_names):
             mapping = {k: headers[n] for k, n in wanted.items() if n and n in headers}
             found = sum(1 for k in required if k in mapping)
             if found == len(required):
-                missing_optional = [k for k, req in FIELDS if not req and wanted[k] and k not in mapping]
-                if missing_optional:
-                    raise ConversionError(
-                        "err_columns_missing",
-                        missing=[column_names[k] for k in missing_optional],
-                        sheet=ws.title,
-                        found=[str(c.value).strip() for c in ws[r] if not is_blank(c.value)],
-                    )
+                # Optional columns (article code, MSA indicator) that the sheet
+                # doesn't have are simply not used.
                 return ws.title, r, mapping
             if found and (best is None or found > best[0]):
                 best = (found, ws, r, mapping)

@@ -114,7 +114,7 @@ def test_output_filename():
 def test_every_text_has_both_languages():
     for key, entry in TEXTS.items():
         assert set(entry) == {"sq", "en"}, key
-    assert "Kujdes" in t("sq", "warnings")
+    assert "Kontrolloni 2" in t("sq", "warnings_title", count=2)
 
 
 def test_bosch_sheet_without_pref_column_matches_manual_dud():
@@ -130,3 +130,9 @@ def test_bosch_sheet_without_pref_column_matches_manual_dud():
     assert with_msa.xml.replace("PCE<", "pce<") == manual
     assert [w.key for w in with_msa.warnings] == ["warn_msa_country_not_eu"]
     assert "Audi A4 2.0 , 2.7 , =10PCE" in xml  # trailing space before "=" is kept
+
+
+def test_optional_column_missing_from_sheet_is_ignored():
+    # The remembered "Pref" name must not block a sheet that has no such column.
+    result = core.convert(FIXTURES / "Perkthimi_Bosch_KS 21.xlsx", core.Options("00", "4000"))
+    assert len(result.items) == 7 and result.msa_count == 0
