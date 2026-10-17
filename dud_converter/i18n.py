@@ -35,6 +35,10 @@ TEXTS = {
         "sq": "MSA vendoset vetëm kur treguesi është pozitiv DHE vendi i origjinës është në BE.",
         "en": "MSA is set only when the indicator is positive AND the country of origin is in the EU.",
     },
+    "q_msa_countries": {
+        "sq": "Pa kolonë preference: cilat vende origjine marrin MSA? (p.sh. BG, DE; bosh = asnjë)",
+        "en": "No preference column: which origin countries get MSA? (e.g. BG, DE; empty = none)",
+    },
     "output_folder": {"sq": "Dosja ku ruhet XML", "en": "Folder to save the XML"},
     "output_same": {"sq": "Lëreni bosh për ta ruajtur pranë skedarit Excel.", "en": "Leave empty to save it next to the Excel file."},
     "constants": {"sq": "Vlerat fikse…", "en": "Fixed values…"},
@@ -78,8 +82,12 @@ TEXTS = {
     # Warnings
     "warn_empty": {"sq": "Rreshti {row}: kolona \"{column}\" është bosh.", "en": "Row {row}: column \"{column}\" is empty."},
     "warn_no_pref_column": {
-        "sq": "Nuk u dha kolona e preferencës, prandaj asnjë artikull nuk ka MSA.",
-        "en": "No preference column was given, so no item gets MSA.",
+        "sq": "Nuk ka kolonë preference dhe nuk u dha asnjë vend për MSA, prandaj asnjë artikull nuk ka MSA.",
+        "en": "There is no preference column and no MSA countries were given, so no item gets MSA.",
+    },
+    "warn_msa_country_not_eu": {
+        "sq": "{country} nuk është vend i BE-së, prandaj nuk merr MSA.",
+        "en": "{country} is not an EU country, so it does not get MSA.",
     },
     "warn_pref_not_eu": {
         "sq": "Rreshti {row}: treguesi është pozitiv por origjina {country} nuk është në BE, MSA nuk u vendos.",

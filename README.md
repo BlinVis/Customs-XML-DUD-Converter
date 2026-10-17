@@ -31,6 +31,7 @@ indicator values).
 | Commodity_code | tariff code column (digits only) |
 | Precision_1 / Extended_customs_procedure | your answers |
 | Preference_code | `MSA` only when the indicator is positive **and** the origin is an EU country; otherwise left out |
+| Preference_code, sheet without an indicator column | `MSA` for the origin countries you type in (EU countries only); leave the field empty for no MSA |
 | Country_of_origin_code | origin column (upper case) |
 | Commercial_Description | `perkthim=<sasia>PCE`; the article code is put in front (`<kodi> - perkthim`) when the text doesn't already start with it |
 | Gross_weight_itm / Net_weight_itm | weight columns |

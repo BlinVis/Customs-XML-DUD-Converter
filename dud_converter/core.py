@@ -95,6 +95,8 @@ class Options:
     extended_procedure: str
     column_names: dict = field(default_factory=lambda: dict(DEFAULT_COLUMN_NAMES))
     positive_indicators: list = field(default_factory=lambda: list(DEFAULT_POSITIVE_INDICATORS))
+    # Used only when the sheet has no preference column: origins that get MSA.
+    msa_countries: list = field(default_factory=list)
     constants: dict = field(default_factory=lambda: dict(DEFAULT_CONSTANTS))
 
 
@@ -367,8 +369,18 @@ def convert(excel_path, options: Options) -> Result:
 
     items, warnings, indicator_values = [], [], {}
     total_amount = total_gross = total_net = 0.0
+    msa_countries = set()
     if "pref" not in cols:
-        warnings.append(Warning_("warn_no_pref_column"))
+        for code in options.msa_countries:
+            code = str(code).strip().upper()
+            if not code:
+                continue
+            if code in EU_COUNTRIES:
+                msa_countries.add(code)
+            else:
+                warnings.append(Warning_("warn_msa_country_not_eu", {"country": code}))
+        if not msa_countries:
+            warnings.append(Warning_("warn_no_pref_column"))
 
     max_row = values_wb[sheet_name].max_row
     for r in range(header_row + 1, max_row + 1):
@@ -418,6 +430,8 @@ def convert(excel_path, options: Options) -> Result:
                     warnings.append(Warning_("warn_pref_not_eu", {"row": r, "country": country or "?"}))
             elif ind_key and ind_key not in KNOWN_NEGATIVE_INDICATORS:
                 warnings.append(Warning_("warn_unknown_indicator", {"row": r, "value": str(ind).strip()}))
+        elif country in msa_countries:
+            pref_code = "MSA"
 
         amount_r = round(amount, 2) if amount is not None else None
         total_amount += amount_r or 0

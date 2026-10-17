@@ -55,11 +55,12 @@ class App(tk.Tk):
         self.indicators_var = tk.StringVar(
             value=self.settings.get("positive_indicators", ", ".join(core.DEFAULT_POSITIVE_INDICATORS))
         )
+        self.msa_countries_var = tk.StringVar()  # per invoice, so not remembered
         self.constants = dict(core.DEFAULT_CONSTANTS)
         self.constants.update(self.settings.get("constants", {}))
 
         self.minsize(760, 720)
-        self.geometry("860x860")
+        self.geometry("860x940")
         self._build()
         self._apply_language()
 
@@ -129,6 +130,11 @@ class App(tk.Tk):
         )
         self.indicators_hint = ttk.Label(self.q_frame, foreground="#555")
         self.indicators_hint.grid(row=4, column=0, columnspan=2, sticky="w", padx=8, pady=(0, 6))
+        self.msa_countries_label = ttk.Label(self.q_frame)
+        self.msa_countries_label.grid(row=5, column=0, columnspan=2, sticky="w", padx=8)
+        ttk.Entry(self.q_frame, textvariable=self.msa_countries_var).grid(
+            row=6, column=0, columnspan=2, sticky="ew", padx=8, pady=(2, 6)
+        )
 
         # Output folder
         self.out_frame = ttk.LabelFrame(root)
@@ -177,6 +183,7 @@ class App(tk.Tk):
         self.extended_label.configure(text=t(L, "q_extended"))
         self.indicators_label.configure(text=t(L, "q_indicators"))
         self.indicators_hint.configure(text=t(L, "indicators_hint"))
+        self.msa_countries_label.configure(text=t(L, "q_msa_countries"))
         self.out_frame.configure(text=t(L, "output_folder"))
         self.out_btn.configure(text=t(L, "browse"))
         self.out_hint.configure(text=t(L, "output_same"))
@@ -282,6 +289,7 @@ class App(tk.Tk):
             extended_procedure=self.extended_var.get(),
             column_names={k: v.get().strip() for k, v in self.column_vars.items()},
             positive_indicators=[s.strip() for s in self.indicators_var.get().split(",") if s.strip()],
+            msa_countries=[s for s in self.msa_countries_var.get().replace(";", ",").replace(" ", ",").split(",") if s],
             constants=self.constants,
         )
         try:

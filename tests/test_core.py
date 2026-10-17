@@ -118,11 +118,15 @@ def test_every_text_has_both_languages():
 
 
 def test_bosch_sheet_without_pref_column_matches_manual_dud():
-    # The manual DUD writes "pce" and marked MSA by hand (no indicator column),
-    # so compare with those two differences taken out.
+    # The manual DUD writes "pce" and has MSA on the BG rows, chosen by hand
+    # because the sheet has no indicator column.
     names = dict(core.DEFAULT_COLUMN_NAMES, pref="")
     xml = core.convert(FIXTURES / "Perkthimi_Bosch_KS 21.xlsx", core.Options("00", "4000", column_names=names)).xml
     manual = (FIXTURES / "DUDIBOSCH22082026.xml").read_bytes().decode("utf-8")
-    manual = manual.replace("\t\t\t<Preference_code>MSA</Preference_code>\r\n", "")
-    assert xml.replace("PCE<", "pce<") == manual
+    assert xml.replace("PCE<", "pce<") == manual.replace("\t\t\t<Preference_code>MSA</Preference_code>\r\n", "")
+    # Naming the MSA origins reproduces the hand-made DUD; TR is refused as non-EU.
+    with_msa = core.convert(FIXTURES / "Perkthimi_Bosch_KS 21.xlsx",
+                            core.Options("00", "4000", column_names=names, msa_countries=["bg", "TR"]))
+    assert with_msa.xml.replace("PCE<", "pce<") == manual
+    assert [w.key for w in with_msa.warnings] == ["warn_msa_country_not_eu"]
     assert "Audi A4 2.0 , 2.7 , =10PCE" in xml  # trailing space before "=" is kept
