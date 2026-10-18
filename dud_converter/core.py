@@ -58,8 +58,11 @@ DEFAULT_CONSTANTS = {
     "Currency_rate": "1",
 }
 
+# The usual answers, offered as buttons; any other 2- / 4-digit code may be typed.
 PRECISION_1_CHOICES = ("00", "90")
 EXTENDED_PROCEDURE_CHOICES = ("1000", "4000")
+PRECISION_1_DIGITS = 2
+EXTENDED_PROCEDURE_DIGITS = 4
 
 DEFAULT_POSITIVE_INDICATORS = ["Po", "Yes", "Y", "Da", "Ja", "+", "X", "MSA", "True", "1"]
 KNOWN_NEGATIVE_INDICATORS = {"jo", "no", "n", "ne", "nein", "-", "false", "0"}
@@ -70,6 +73,13 @@ EU_COUNTRIES = {
     "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI",
     "ES", "SE",
 }
+
+# Preference code per eligible origin: EU goods get MSA, UK goods GBMTL.
+PREFERENCE_CODES = {code: "MSA" for code in EU_COUNTRIES}
+PREFERENCE_CODES["GB"] = "GBMTL"
+
+# The old ASYCUDA client only knows GB for the United Kingdom.
+COUNTRY_ALIASES = {"UK": "GB"}
 
 HEADER_SCAN_ROWS = 30
 
@@ -95,7 +105,7 @@ class Options:
     extended_procedure: str
     column_names: dict = field(default_factory=lambda: dict(DEFAULT_COLUMN_NAMES))
     positive_indicators: list = field(default_factory=lambda: list(DEFAULT_POSITIVE_INDICATORS))
-    # Used only when the sheet has no preference column: origins that get MSA.
+    # Used only when the sheet has no preference column: origins that get MSA (GB: GBMTL).
     msa_countries: list = field(default_factory=list)
     constants: dict = field(default_factory=lambda: dict(DEFAULT_CONSTANTS))
 
@@ -165,6 +175,16 @@ def to_number(value):
     elif text.count(",") > 1:
         text = text.replace(",", "")
     return float(text)
+
+
+def normalize_country(value) -> str:
+    """Origin code as ASYCUDA wants it: upper case, UK written as GB."""
+    code = "" if is_blank(value) else str(value).strip().upper()
+    return COUNTRY_ALIASES.get(code, code)
+
+
+def is_code(value, digits: int) -> bool:
+    return isinstance(value, str) and len(value) == digits and value.isascii() and value.isdigit()
 
 
 def format_number(value: float, decimals: int) -> str:
@@ -334,7 +354,7 @@ def inspect_sheet(path, column_names) -> SheetInfo | None:
         for r in range(row + 1, ws.max_row + 1):
             v = ws.cell(r, col).value
             if not is_blank(v):
-                code = str(v).strip().upper()
+                code = normalize_country(v)
                 if code not in countries:
                     countries.append(code)
     return SheetInfo(ws.title, row, headers, found, countries)
@@ -381,9 +401,9 @@ def _find_columns(values_wb, column_names):
 
 
 def convert(excel_path, options: Options) -> Result:
-    if options.precision_1 not in PRECISION_1_CHOICES:
+    if not is_code(options.precision_1, PRECISION_1_DIGITS):
         raise ConversionError("err_precision")
-    if options.extended_procedure not in EXTENDED_PROCEDURE_CHOICES:
+    if not is_code(options.extended_procedure, EXTENDED_PROCEDURE_DIGITS):
         raise ConversionError("err_extended")
 
     values_wb, formulas_wb = _load(excel_path)
@@ -415,10 +435,10 @@ def convert(excel_path, options: Options) -> Result:
     msa_countries = set()
     if "pref" not in cols:
         for code in options.msa_countries:
-            code = str(code).strip().upper()
+            code = normalize_country(code)
             if not code:
                 continue
-            if code in EU_COUNTRIES:
+            if code in PREFERENCE_CODES:
                 msa_countries.add(code)
             else:
                 warnings.append(Warning_("warn_msa_country_not_eu", {"country": code}))
@@ -455,7 +475,7 @@ def convert(excel_path, options: Options) -> Result:
             warnings.append(Warning_("warn_empty", {"row": r, "column": names["kodi_tarifor"]}))
 
         origin_raw = cell(r, "origjina")
-        country = "" if is_blank(origin_raw) else str(origin_raw).strip().upper()
+        country = normalize_country(origin_raw)
         if not country:
             warnings.append(Warning_("warn_empty", {"row": r, "column": names["origjina"]}))
 
@@ -467,14 +487,14 @@ def convert(excel_path, options: Options) -> Result:
             if ind_key:
                 indicator_values[str(ind).strip()] = positive
             if positive:
-                if country in EU_COUNTRIES:
-                    pref_code = "MSA"
+                if country in PREFERENCE_CODES:
+                    pref_code = PREFERENCE_CODES[country]
                 else:
                     warnings.append(Warning_("warn_pref_not_eu", {"row": r, "country": country or "?"}))
             elif ind_key and ind_key not in KNOWN_NEGATIVE_INDICATORS:
                 warnings.append(Warning_("warn_unknown_indicator", {"row": r, "value": str(ind).strip()}))
         elif country in msa_countries:
-            pref_code = "MSA"
+            pref_code = PREFERENCE_CODES[country]
 
         amount_r = round(amount, 2) if amount is not None else None
         total_amount += amount_r or 0

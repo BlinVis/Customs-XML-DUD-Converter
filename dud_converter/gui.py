@@ -85,12 +85,31 @@ class ScrollArea(tk.Frame):
         bar.pack(side="right", fill="y")
         self.inner.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
         self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfigure(self._win, width=e.width))
-        self.bind_all("<MouseWheel>", self._wheel, add="+")
-        self.bind_all("<Button-4>", lambda e: self.canvas.yview_scroll(-3, "units"), add="+")
-        self.bind_all("<Button-5>", lambda e: self.canvas.yview_scroll(3, "units"), add="+")
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            self.bind_all(seq, self._wheel, add="+")
 
     def _wheel(self, event):
-        self.canvas.yview_scroll(int(-event.delta / 120) * 3, "units")
+        if isinstance(event.widget, str) or event.widget.winfo_class() == "Listbox":
+            return  # an open combobox list scrolls itself, not the page
+        if event.num == 4:
+            steps = -3
+        elif event.num == 5:
+            steps = 3
+        else:
+            steps = int(-event.delta / 120) * 3
+        self.canvas.yview_scroll(steps, "units")
+
+    def scroll_only(self, widget):
+        """Make the wheel over `widget` scroll the page instead of changing its value.
+
+        A ttk.Combobox steps through its list on every wheel or two-finger
+        swipe, which silently changed the chosen columns while scrolling.
+        """
+        def wheel(event):
+            self._wheel(event)
+            return "break"
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            widget.bind(seq, wheel)
 
 
 class App(tk.Tk):
@@ -103,8 +122,11 @@ class App(tk.Tk):
 
         self.excel_var = tk.StringVar()
         self.output_var = tk.StringVar(value=self.settings.get("output_folder", ""))
-        self.precision_var = tk.StringVar(value="")  # no default: the user must answer
+        # No default: the user must answer. "other" means the typed code is used.
+        self.precision_var = tk.StringVar(value="")
         self.extended_var = tk.StringVar(value="")
+        self.precision_other = tk.StringVar(value="")
+        self.extended_other = tk.StringVar(value="")
         saved_cols = self.settings.get("column_names", {})
         self.column_vars = {
             key: tk.StringVar(value=saved_cols.get(key, core.DEFAULT_COLUMN_NAMES[key]))
@@ -140,6 +162,8 @@ class App(tk.Tk):
         style.map("Choice.TRadiobutton",
                   background=[("selected", PRIMARY), ("active", "#C7DAEE")],
                   foreground=[("selected", "#FFFFFF")])
+        style.configure("Other.TRadiobutton", font=(FONT, 11), padding=(10, 8), background=CARD)
+        style.configure("Code.TEntry", padding=6)
         style.configure("TCheckbutton", background=CARD, font=(FONT, 11))
         style.configure("Big.TButton", font=(FONT, 11, "bold"), padding=(16, 8),
                         background=PRIMARY, foreground="#FFFFFF", bordercolor=PRIMARY)
@@ -206,14 +230,11 @@ class App(tk.Tk):
         footer.pack(side="bottom", fill="x")
         left = tk.Frame(footer, bg=CARD)
         left.pack(side="left", fill="x", expand=True)
-        self.save_to_label = self._label(left, "", color=MUTED, wraplength=520)
-        self.save_to_label.pack(anchor="w")
+        self._label(left, self.tr("save_hint"), color=MUTED, wraplength=520).pack(anchor="w")
         links = tk.Frame(left, bg=CARD)
         links.pack(anchor="w", pady=(4, 0))
-        ttk.Button(links, text=self.tr("change_folder"), style="Link.TButton",
-                   command=self._browse_output).pack(side="left")
         ttk.Button(links, text="⚙ " + self.tr("constants"), style="Link.TButton",
-                   command=self._edit_constants).pack(side="left", padx=6)
+                   command=self._edit_constants).pack(side="left")
         ttk.Button(footer, text=self.tr("create"), style="Go.TButton", command=self._create).pack(side="right")
 
         self.body = ScrollArea(self)
@@ -221,6 +242,7 @@ class App(tk.Tk):
         self._build_step_file()
         self._build_step_columns()
         self._build_step_questions()
+        self._build_step_create()
         tk.Frame(self.body.inner, bg=BG, height=16).pack()
         self._refresh()
 
@@ -246,29 +268,52 @@ class App(tk.Tk):
             self._label(c, text).grid(row=i, column=0, sticky="w", pady=3, padx=(0, 12))
             box = ttk.Combobox(c, textvariable=self.column_vars[key], width=34)
             box.grid(row=i, column=1, sticky="ew", pady=3)
+            self.body.scroll_only(box)
+            box.bind("<<ComboboxSelected>>", self._column_picked)
             status = self._label(c, "", size=10, bold=True)
             status.grid(row=i, column=2, sticky="w", padx=(10, 0))
             self.column_boxes[key], self.column_status[key] = box, status
 
+    def _column_picked(self, event):
+        # Leave the box once a column is picked, so nothing can change it by accident.
+        event.widget.selection_clear()
+        self.focus_set()
+
     def _build_step_questions(self):
         c = self._card(3, self.tr("step3_title"), self.tr("step3_hint"))
-        for label_key, var, choices in (
-            ("q_precision", self.precision_var, core.PRECISION_1_CHOICES),
-            ("q_extended", self.extended_var, core.EXTENDED_PROCEDURE_CHOICES),
+        for label_key, hint_key, var, other, choices, digits in (
+            ("q_precision", "q_code_hint", self.precision_var, self.precision_other,
+             core.PRECISION_1_CHOICES, core.PRECISION_1_DIGITS),
+            ("q_extended", "q_code_hint", self.extended_var, self.extended_other,
+             core.EXTENDED_PROCEDURE_CHOICES, core.EXTENDED_PROCEDURE_DIGITS),
         ):
             row = tk.Frame(c, bg=CARD)
-            row.pack(fill="x", pady=(0, 10))
-            self._label(row, self.tr(label_key), size=11, bold=True).pack(anchor="w", pady=(0, 4))
+            row.pack(fill="x", pady=(0, 12))
+            self._label(row, self.tr(label_key), size=11, bold=True).pack(anchor="w")
+            self._label(row, self.tr(hint_key, digits=digits), color=MUTED, wraplength=780).pack(
+                anchor="w", pady=(2, 6))
             buttons = tk.Frame(row, bg=CARD)
             buttons.pack(anchor="w")
             for v in choices:
                 ttk.Radiobutton(buttons, text=v, value=v, variable=var,
                                 style="Choice.TRadiobutton").pack(side="left", padx=(0, 6))
+            ttk.Radiobutton(buttons, text=self.tr("other_code"), value="other", variable=var,
+                            style="Other.TRadiobutton").pack(side="left", padx=(10, 2))
+            check = (self.register(lambda text, n=digits: len(text) <= n and (text == "" or text.isdigit())), "%P")
+            entry = ttk.Entry(buttons, textvariable=other, width=digits + 3, font=(FONT, 12, "bold"),
+                              style="Code.TEntry", validate="key", validatecommand=check)
+            entry.pack(side="left")
+            entry.bind("<FocusIn>", lambda e, v=var: v.set("other"))
 
         tk.Frame(c, bg=BORDER, height=1).pack(fill="x", pady=(4, 10))
-        self._label(c, "MSA", size=11, bold=True).pack(anchor="w")
+        self._label(c, self.tr("msa_title"), size=11, bold=True).pack(anchor="w")
         self.msa_frame = tk.Frame(c, bg=CARD)
         self.msa_frame.pack(fill="x", pady=(4, 0))
+
+    def _build_step_create(self):
+        c = self._card(4, self.tr("step4_title"))
+        for i in range(1, 5):
+            self._label(c, f"{i}.  " + self.tr(f"step4_line{i}"), wraplength=760).pack(anchor="w", pady=1)
 
     def _fill_msa_section(self):
         for child in self.msa_frame.winfo_children():
@@ -285,17 +330,19 @@ class App(tk.Tk):
             self._label(f, self.tr("indicators_hint"), color=MUTED, wraplength=780).pack(anchor="w")
             return
 
-        eu = [code for code in info.countries if code in core.EU_COUNTRIES]
-        other = [code for code in info.countries if code not in core.EU_COUNTRIES]
-        self.country_vars = {code: self.country_vars.get(code) or tk.BooleanVar(value=False) for code in eu}
-        if not eu:
+        eligible = [code for code in info.countries if code in core.PREFERENCE_CODES]
+        other = [code for code in info.countries if code not in core.PREFERENCE_CODES]
+        self.country_vars = {code: self.country_vars.get(code) or tk.BooleanVar(value=False) for code in eligible}
+        if not eligible:
             self._label(f, self.tr("msa_no_eu"), wraplength=780).pack(anchor="w")
         else:
             self._label(f, self.tr("msa_pick_countries"), wraplength=780).pack(anchor="w")
             boxes = tk.Frame(f, bg=CARD)
             boxes.pack(anchor="w", pady=(6, 0))
-            for i, code in enumerate(eu):
-                ttk.Checkbutton(boxes, text=code, variable=self.country_vars[code]).grid(
+            for i, code in enumerate(eligible):
+                pref = core.PREFERENCE_CODES[code]
+                text = code if pref == "MSA" else f"{code} ({pref})"
+                ttk.Checkbutton(boxes, text=text, variable=self.country_vars[code]).grid(
                     row=i // 8, column=i % 8, sticky="w", padx=(0, 18), pady=2)
         if other:
             self._label(f, self.tr("msa_outside_eu", countries=", ".join(other)), color=MUTED,
@@ -331,11 +378,6 @@ class App(tk.Tk):
         else:
             self.file_status_label.configure(
                 text="✓ " + self.tr("file_ready", sheet=info.sheet_name), fg=OK)
-        folder = self.output_var.get().strip()
-        if not folder and excel:
-            folder = str(Path(excel).parent)
-        self.save_to_label.configure(
-            text=self.tr("save_to", folder=folder) if folder else self.tr("save_to_default"))
         self._fill_msa_section()
 
     def _inspect(self):
@@ -385,13 +427,6 @@ class App(tk.Tk):
             self.country_vars = {}
             self._inspect()
 
-    def _browse_output(self):
-        path = filedialog.askdirectory(title=self.tr("change_folder"))
-        if path:
-            self.output_var.set(path)
-            self._remember()
-            self._refresh()
-
     def _edit_constants(self):
         win = tk.Toplevel(self, bg=CARD, padx=18, pady=14)
         win.title(self.tr("constants_title"))
@@ -426,17 +461,19 @@ class App(tk.Tk):
         if not excel:
             messagebox.showwarning(self.tr("missing_title"), self.tr("need_file"))
             return
-        if not self.precision_var.get():
-            messagebox.showwarning(self.tr("missing_title"), self.tr("need_precision"))
+        precision = self._answer(self.precision_var, self.precision_other, core.PRECISION_1_DIGITS,
+                                 "need_precision")
+        if precision is None:
             return
-        if not self.extended_var.get():
-            messagebox.showwarning(self.tr("missing_title"), self.tr("need_extended"))
+        extended = self._answer(self.extended_var, self.extended_other, core.EXTENDED_PROCEDURE_DIGITS,
+                                "need_extended")
+        if extended is None:
             return
         self._remember()
 
         options = core.Options(
-            precision_1=self.precision_var.get(),
-            extended_procedure=self.extended_var.get(),
+            precision_1=precision,
+            extended_procedure=extended,
             column_names=self._column_names(),
             positive_indicators=[s.strip() for s in self.indicators_var.get().split(",") if s.strip()],
             msa_countries=[code for code, var in self.country_vars.items() if var.get()],
@@ -448,16 +485,41 @@ class App(tk.Tk):
             messagebox.showerror(self.tr("error"), self.tr(exc.key, **exc.params))
             return
 
-        folder = Path(self.output_var.get().strip() or Path(excel).parent)
-        out = folder / core.output_filename(excel)
-        if out.exists() and not messagebox.askyesno(self.tr("create"), self.tr("overwrite", name=out.name)):
-            return
+        # Ask where to save every time; start in the folder used last time.
+        folder = self.output_var.get().strip()
+        if not folder or not Path(folder).is_dir():
+            folder = str(Path(excel).parent)
+        path = filedialog.asksaveasfilename(
+            title=self.tr("save_title"),
+            initialdir=folder,
+            initialfile=core.output_filename(excel),
+            defaultextension=".xml",
+            filetypes=[(self.tr("xml_filter"), "*.xml"), (self.tr("all_files"), "*.*")],
+        )
+        if not path:
+            return  # cancelled; the dialog itself asks before replacing a file
+        out = Path(path)
+        self.output_var.set(str(out.parent))
+        self._remember()
         try:
             core.write_xml(result.xml, out)
         except OSError as exc:
             messagebox.showerror(self.tr("error"), self.tr("err_save", detail=str(exc)))
             return
         self._show_result(result, out)
+
+    def _answer(self, var, other, digits, missing_key):
+        """The chosen code, or None after telling the user what is missing."""
+        value = var.get()
+        if value == "other":
+            value = other.get().strip()
+            if not core.is_code(value, digits):
+                messagebox.showwarning(self.tr("missing_title"), self.tr("need_other_code", digits=digits))
+                return None
+        if not value:
+            messagebox.showwarning(self.tr("missing_title"), self.tr(missing_key))
+            return None
+        return value
 
     def _show_result(self, result, out: Path):
         win = tk.Toplevel(self, bg=CARD, padx=24, pady=20)

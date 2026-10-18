@@ -11,9 +11,12 @@ skills, so the UI must stay simple, step-by-step and bilingual (Albanian default
 - `dud_converter/core.py`: all conversion logic, no GUI. `convert(path, Options) -> Result`,
   `inspect_sheet()` for live column feedback, `build_xml()`, `output_filename()`.
 - `dud_converter/gui.py`: Tkinter window (clam theme, scrolling body): header with Shqip/English
-  switch, steps 1 file, 2 columns (combobox of sheet titles + ✓/✗), 3 questions (00/90, 1000/4000,
-  MSA), fixed footer with save folder and Create button, result popup. Settings (column names, MSA
-  words, fixed values, language, output folder) are saved in `%APPDATA%\DUDConverter\settings.json`.
+  switch, steps 1 file, 2 columns (combobox of sheet titles + ✓/✗), 3 questions (00/90, 1000/4000
+  or a typed code, MSA/GBMTL), 4 how to create/check, fixed footer with the Create button, result
+  popup. Create always opens a Save-as dialog (starts in the last folder used). The wheel over a column
+  combobox scrolls the page instead of changing the pick (`ScrollArea.scroll_only`). Settings (column
+  names, MSA words, fixed values, language, last output folder) are saved in
+  `%APPDATA%\DUDConverter\settings.json`.
 - `dud_converter/i18n.py`: every user-visible string, `{"sq": ..., "en": ...}`; `t(lang, key, **p)`.
   Errors/warnings from core are keys + params, translated in the GUI. A test checks both languages.
 - `app.py` entry point; `build_exe.bat` (PyInstaller one-file); `run_app.bat`.
@@ -34,8 +37,11 @@ skills, so the UI must stay simple, step-by-step and bilingual (Albanian default
 - `Amount_foreign_currency` = **Totali only, never "Totali me zbritje"**, rounded to 2 decimals.
   Formulas (`=E2*D2`) use Excel's cached value, else a small safe evaluator (+-*/, SUM, ROUND).
   Text numbers like `1.234,56 €` are parsed.
-- `Precision_1` (00/90) and `Extended_customs_procedure` (1000/4000) are asked every time, no default.
-- **MSA** (`Preference_code`): only for EU origin countries. With an indicator column, positive values
+- `Precision_1` (00/90) and `Extended_customs_procedure` (1000/4000) are asked every time, no default;
+  the user can also type any other 2-digit / 4-digit code.
+- Origin codes are upper-cased and `UK` is written as `GB` (the old ASYCUDA has no UK).
+- **MSA** (`Preference_code`): only for EU origin countries; GB origins get `GBMTL` instead (user's
+  rule, "I think"), handled the same way (indicator column or ticked). With an indicator column, positive values
   (default list: Po, Yes, Y, Da, Ja, +, X, MSA, True, 1) on an EU origin → `MSA`; positive on non-EU →
   warning, no MSA. Without the column, the user ticks which EU origins in that invoice get MSA (the
   user's choice; in the Bosch sample BG got MSA but DE didn't, so it can't be inferred). Not remembered.
