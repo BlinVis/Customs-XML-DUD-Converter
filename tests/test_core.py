@@ -93,7 +93,7 @@ def _make_sheet(path, rows, headers=("Kodi", "Perkthim", "Sasia", "Totali", "Pes
 def test_description_prefix_msa_rules_and_text_numbers(tmp_path):
     path = _make_sheet(tmp_path / "p.xlsx", [
         ("AB-1", "Filter vaji", 3, "1.234,50", 2, 2.5, "de", "+", "8421 23 00"),  # code missing in text
-        ("AB-2", "AB-2 Filter ajri", 1.0, 10, 1, 1.2, "TR", "+", 84213100),         # positive but not EU
+        ("AB-2", "AB-2 Filter ajri", 1.0, 10, 1, 1.2, "CN", "+", 84213100),         # positive but not eligible
         ("AB-3", "Fshirëse", 2, 5, 1, 1, "IT", "?", 85123010),                     # unknown indicator
         (None, None, None, 1249.5, 4, 4.7, None, None, None),                      # totals row is skipped
     ])
@@ -143,9 +143,9 @@ def test_bosch_sheet_without_pref_column_matches_manual_dud():
     xml = core.convert(FIXTURES / "Perkthimi_Bosch_KS 21.xlsx", core.Options("00", "4000", column_names=names)).xml
     manual = (FIXTURES / "DUDIBOSCH22082026.xml").read_bytes().decode("utf-8")
     assert xml.replace("PCE<", "pce<") == manual.replace("\t\t\t<Preference_code>MSA</Preference_code>\r\n", "")
-    # Naming the MSA origins reproduces the hand-made DUD; TR is refused as non-EU.
+    # Naming the MSA origins reproduces the hand-made DUD; US is refused as not eligible.
     with_msa = core.convert(FIXTURES / "Perkthimi_Bosch_KS 21.xlsx",
-                            core.Options("00", "4000", column_names=names, msa_countries=["bg", "TR"]))
+                            core.Options("00", "4000", column_names=names, msa_countries=["bg", "US"]))
     assert with_msa.xml.replace("PCE<", "pce<") == manual
     assert [w.key for w in with_msa.warnings] == ["warn_msa_country_not_eu"]
     assert "Audi A4 2.0 , 2.7 , =10PCE" in xml  # trailing space before "=" is kept
@@ -186,4 +186,12 @@ def test_ticked_gb_gets_gbmtl_without_pref_column(tmp_path):
                                 "Origjina", "Kodi tarifor"))
     result = core.convert(path, core.Options("00", "4000", msa_countries=["GB", "BG"]))
     assert [i.preference_code for i in result.items] == ["GBMTL", "MSA"]
+    assert result.warnings == []
+
+
+def test_turkey_gets_trmtl(tmp_path):
+    path = _make_sheet(tmp_path / "p.xlsx", [("K1", "Tekst", 1, 2, 1, 1, "tr", "Po", 1234),
+                                             ("K2", "Tekst", 1, 2, 1, 1, "TR", "Jo", 1234)])
+    result = core.convert(path, core.Options("00", "4000"))
+    assert [(i.country, i.preference_code) for i in result.items] == [("TR", "TRMTL"), ("TR", "")]
     assert result.warnings == []
