@@ -263,9 +263,8 @@ class App(tk.Tk):
         c = self._card(2, self.tr("step2_title"), self.tr("step2_hint"))
         c.columnconfigure(1, weight=1)
         self.column_boxes, self.column_status = {}, {}
-        for i, (key, required) in enumerate(core.FIELDS):
-            text = self.tr("field_" + key) + ("" if required else "  " + self.tr("optional"))
-            self._label(c, text).grid(row=i, column=0, sticky="w", pady=3, padx=(0, 12))
+        for i, (key, _) in enumerate(core.FIELDS):
+            self._label(c, self.tr("field_" + key)).grid(row=i, column=0, sticky="w", pady=3, padx=(0, 12))
             box = ttk.Combobox(c, textvariable=self.column_vars[key], width=34)
             box.grid(row=i, column=1, sticky="ew", pady=3)
             self.body.scroll_only(box)
@@ -368,13 +367,13 @@ class App(tk.Tk):
             elif not required:
                 status.configure(text="– " + self.tr("not_used"), fg=MUTED)
             else:
-                status.configure(text="✗ " + self.tr("not_found"), fg=BAD)
+                status.configure(text="⚠ " + self.tr("will_be_empty"), fg=WARN_TEXT)
                 missing_required.append(key)
             self.column_boxes[key].configure(values=info.headers if info else [])
         if info is None:
             self.file_status_label.configure(text=self.tr("step1_none") if not excel else "", fg=MUTED)
         elif missing_required:
-            self.file_status_label.configure(text="✗ " + self.tr("columns_missing_short"), fg=BAD)
+            self.file_status_label.configure(text="⚠ " + self.tr("columns_missing_short"), fg=WARN_TEXT)
         else:
             self.file_status_label.configure(
                 text="✓ " + self.tr("file_ready", sheet=info.sheet_name), fg=OK)

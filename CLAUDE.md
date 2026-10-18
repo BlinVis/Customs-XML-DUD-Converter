@@ -28,8 +28,9 @@ skills, so the UI must stay simple, step-by-step and bilingual (Albanian default
 
 - Columns are found by the **exact header text, case-insensitive, extra spaces ignored**; the user
   types/picks the names (supplier sheets name columns inconsistently). The header row is the first row
-  (any sheet, first 30 rows) containing all required names. Optional: article code (`Kodi`) and the
-  MSA indicator (`Pref`); if the sheet lacks them they are ignored, never an error.
+  (any sheet, first 30 rows) holding the most of the names. **Every column is optional** (user's
+  choice): a missing one is skipped and its element left empty in every item, with one
+  `warn_column_missing` warning (none for `Kodi`/`Pref`). Only a sheet with none of the names errors.
 - Rows with neither perkthim nor article code (e.g. the totals row) are skipped.
 - `Commercial_Description` = perkthim text **exactly as typed** (spaces kept, like Excel CONCAT; only
   line breaks flattened) + `=` + quantity + `PCE`. If the text doesn't start with the article code,

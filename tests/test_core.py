@@ -51,13 +51,32 @@ def test_answers_go_into_every_item():
     assert xml.count("<Extended_customs_procedure>1000</Extended_customs_procedure>") == 22
 
 
-def test_missing_column_reports_what_the_sheet_has():
+def test_missing_column_is_left_empty_with_a_warning():
     names = dict(core.DEFAULT_COLUMN_NAMES, origjina="Country")
+    result = core.convert(SAMPLE, core.Options("00", "4000", column_names=names))
+    assert len(result.items) == 22
+    assert "<Country_of_origin_code>" not in result.xml
+    assert [(w.key, w.params["column"]) for w in result.warnings] == [("warn_column_missing", "Country")]
+    # Origin is unknown, so no row can get MSA.
+    assert result.msa_count == 0
+
+
+def test_only_some_columns_present(tmp_path):
+    path = _make_sheet(tmp_path / "p.xlsx", [("Filter", 12.5), (None, 12.5)], headers=("Perkthim", "Totali"))
+    result = core.convert(path, core.Options("00", "4000"))
+    (item,) = result.items  # the totals row has no description and is skipped
+    assert item.description == "Filter" and item.amount == "12.5"
+    assert item.commodity_code == item.country == item.gross_weight == ""
+    missing = {w.params["field"] for w in result.warnings if w.key == "warn_column_missing"}
+    assert missing == {"sasia", "pesha_bruto", "pesha_neto", "origjina", "kodi_tarifor"}
+    assert "<Commodity_code>" not in result.xml and "<Precision_1>00</Precision_1>" in result.xml
+
+
+def test_sheet_with_none_of_the_columns_is_an_error(tmp_path):
+    path = _make_sheet(tmp_path / "p.xlsx", [("x", 1)], headers=("Foo", "Bar"))
     with pytest.raises(core.ConversionError) as exc:
-        core.convert(SAMPLE, core.Options("00", "4000", column_names=names))
-    assert exc.value.key == "err_columns_missing"
-    assert exc.value.params["missing"] == ["Country"]
-    assert "Origjina" in exc.value.params["found"]
+        core.convert(path, core.Options("00", "4000"))
+    assert exc.value.key == "err_no_header"
 
 
 def _make_sheet(path, rows, headers=("Kodi", "Perkthim", "Sasia", "Totali", "Pesha neto",

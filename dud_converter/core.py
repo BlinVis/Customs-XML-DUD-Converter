@@ -20,7 +20,8 @@ from xml.sax.saxutils import escape
 import openpyxl
 from openpyxl.utils import column_index_from_string, get_column_letter
 
-# Logical columns the app needs from the perkthim sheet: (key, required).
+# Logical columns read from the perkthim sheet: (key, expected). Every column may be
+# missing from a sheet; a missing expected one is left empty with a warning.
 FIELDS = [
     ("kodi", False),
     ("perkthim", True),
@@ -361,14 +362,13 @@ def inspect_sheet(path, column_names) -> SheetInfo | None:
 
 
 def _find_columns(values_wb, column_names):
-    """Locate the header row: the first row (any sheet) holding every required name."""
-    wanted = {k: normalize_header(column_names.get(k, "")) for k, _ in FIELDS}
-    required = [k for k, req in FIELDS if req]
-    for k in required:
-        if not wanted[k]:
-            raise ConversionError("err_column_name_empty", field=k)
+    """Locate the header row: the first row (any sheet) holding the most given names.
 
-    best = None  # (found count, sheet, row, mapping)
+    Columns the sheet doesn't have are simply not in the mapping; their data stays empty.
+    """
+    wanted = {k: normalize_header(column_names.get(k, "")) for k, _ in FIELDS}
+    named = sum(1 for n in wanted.values() if n)
+    best = None  # (sheet title, row, mapping)
     for ws in values_wb.worksheets:
         for r in range(1, min(ws.max_row, HEADER_SCAN_ROWS) + 1):
             headers = {}
@@ -377,23 +377,14 @@ def _find_columns(values_wb, column_names):
                 if key and key not in headers:
                     headers[key] = c.column
             mapping = {k: headers[n] for k, n in wanted.items() if n and n in headers}
-            found = sum(1 for k in required if k in mapping)
-            if found == len(required):
-                # Optional columns (article code, MSA indicator) that the sheet
-                # doesn't have are simply not used.
-                return ws.title, r, mapping
-            if found and (best is None or found > best[0]):
-                best = (found, ws, r, mapping)
+            if mapping and (best is None or len(mapping) > len(best[2])):
+                best = (ws.title, r, mapping)
+                if len(mapping) == named:
+                    return best
 
     if best is None:
-        raise ConversionError("err_no_header", names=[column_names[k] for k in required])
-    _, ws, r, mapping = best
-    raise ConversionError(
-        "err_columns_missing",
-        missing=[column_names[k] for k in required if k not in mapping],
-        sheet=ws.title,
-        found=[str(c.value).strip() for c in ws[r] if not is_blank(c.value)],
-    )
+        raise ConversionError("err_no_header", names=[n for n in column_names.values() if str(n).strip()])
+    return best
 
 
 # --------------------------------------------------------------------------
@@ -426,11 +417,14 @@ def convert(excel_path, options: Options) -> Result:
             n = to_number(raw)
         except ValueError:
             raise ConversionError("err_not_number", row=row, column=names[key], value=str(raw))
-        if n is None:
+        if n is None and key in cols:
             warnings.append(Warning_("warn_empty", {"row": row, "column": names[key]}))
         return n
 
     items, warnings, indicator_values = [], [], {}
+    for key, expected in FIELDS:
+        if expected and key not in cols:
+            warnings.append(Warning_("warn_column_missing", {"column": names.get(key, ""), "field": key}))
     total_amount = total_gross = total_net = 0.0
     msa_countries = set()
     if "pref" not in cols:
@@ -449,8 +443,11 @@ def convert(excel_path, options: Options) -> Result:
     for r in range(header_row + 1, max_row + 1):
         perkthim = cell(r, "perkthim")
         kodi = cell(r, "kodi")
-        if is_blank(perkthim) and is_blank(kodi):
-            continue  # empty line or the totals row
+        if "perkthim" in cols or "kodi" in cols:
+            if is_blank(perkthim) and is_blank(kodi):
+                continue  # empty line or the totals row
+        elif all(is_blank(cell(r, k)) for k in cols):
+            continue
 
         kodi_text = "" if is_blank(kodi) else str(kodi).strip()
         if isinstance(kodi, float) and kodi.is_integer():
@@ -458,25 +455,26 @@ def convert(excel_path, options: Options) -> Result:
         # Keep the text exactly as typed (like Excel's CONCAT), spaces included;
         # only line breaks are flattened.
         desc = "" if is_blank(perkthim) else re.sub(r"[\r\n]+", " ", str(perkthim))
-        if not desc:
+        if not desc and "perkthim" in cols:
             warnings.append(Warning_("warn_empty", {"row": r, "column": names["perkthim"]}))
         if kodi_text and not desc.lstrip().casefold().startswith(kodi_text.casefold()):
             desc = f"{kodi_text} - {desc}" if desc else kodi_text
 
-        qty = number(r, "sasia", warnings)
-        desc += f"={format_number(qty or 0, 3)}PCE"
+        if "sasia" in cols:
+            qty = number(r, "sasia", warnings)
+            desc += f"={format_number(qty or 0, 3)}PCE"
 
         amount = number(r, "totali", warnings)
         gross = number(r, "pesha_bruto", warnings)
         net = number(r, "pesha_neto", warnings)
 
         hs = format_commodity_code(cell(r, "kodi_tarifor"))
-        if not hs:
+        if not hs and "kodi_tarifor" in cols:
             warnings.append(Warning_("warn_empty", {"row": r, "column": names["kodi_tarifor"]}))
 
         origin_raw = cell(r, "origjina")
         country = normalize_country(origin_raw)
-        if not country:
+        if not country and "origjina" in cols:
             warnings.append(Warning_("warn_empty", {"row": r, "column": names["origjina"]}))
 
         pref_code = ""
@@ -489,7 +487,7 @@ def convert(excel_path, options: Options) -> Result:
             if positive:
                 if country in PREFERENCE_CODES:
                     pref_code = PREFERENCE_CODES[country]
-                else:
+                elif "origjina" in cols:  # a missing origin column is already warned about
                     warnings.append(Warning_("warn_pref_not_eu", {"row": r, "country": country or "?"}))
             elif ind_key and ind_key not in KNOWN_NEGATIVE_INDICATORS:
                 warnings.append(Warning_("warn_unknown_indicator", {"row": r, "value": str(ind).strip()}))
