@@ -12,8 +12,8 @@ TEXTS = {
     "field_pesha_neto": {"sq": "Pesha neto", "en": "Net weight"},
     "field_origjina": {"sq": "Vendi i origjinës", "en": "Country of origin"},
     "field_pref": {
-        "sq": "Preferenca (MSA / GBMTL)",
-        "en": "Preference (MSA / GBMTL)",
+        "sq": "Preferenca (MSA / GBMTL / TRMTL)",
+        "en": "Preference (MSA / GBMTL / TRMTL)",
     },
     "field_kodi_tarifor": {"sq": "Kodi tarifor", "en": "Tariff code"},
     "q_precision": {
@@ -25,8 +25,8 @@ TEXTS = {
         "en": "Extended customs procedure (usually 1000 or 4000)",
     },
     "indicators_hint": {
-        "sq": "Preferenca vendoset vetëm kur vlera është PO dhe origjina është nga BE-ja (merr MSA) ose GB (merr GBMTL). Vendet e tjera nuk marrin preferencë.",
-        "en": "A preference is set only when the value means YES and the origin is in the EU (gets MSA) or GB (gets GBMTL). Other countries get no preference.",
+        "sq": "Preferenca vendoset vetëm kur vlera është PO dhe origjina është nga BE-ja (merr MSA) GB (merr GBMTL) ose TR (merr TRMTL). Vendet e tjera nuk marrin preferencë.",
+        "en": "A preference is set only when the value means YES and the origin is in the EU (gets MSA) GB (gets GBMTL) or TR (gets TRMTL). Other countries get no preference.",
     },
     "constants": {"sq": "Vlerat fikse", "en": "Fixed values"},
     "constants_title": {"sq": "Vlerat fikse të çdo artikulli", "en": "Fixed values for every item"},
@@ -81,16 +81,16 @@ TEXTS = {
         "en": 'The "{column}" column shows which items get a preference. Which values in it mean YES? (comma separated)',
     },
     "msa_pick_countries": {
-        "sq": "Ky Excel nuk ka kolonë për preferencën. Shënoni vendet e origjinës që marrin preferencë në këtë faturë: vendet e BE-së marrin MSA, GB merr GBMTL. Nëse nuk shënoni asnjë, asnjë artikull nuk merr preferencë.",
-        "en": "This Excel has no preference column. Tick the countries of origin that get a preference in this invoice: EU countries get MSA, GB gets GBMTL. If you tick none, no item gets a preference.",
+        "sq": "Ky Excel nuk ka kolonë për preferencën. Shënoni vendet e origjinës që marrin preferencë në këtë faturë: vendet e BE-së marrin MSA, GB merr GBMTL, TR merr TRMTL. Nëse nuk shënoni asnjë, asnjë artikull nuk merr preferencë.",
+        "en": "This Excel has no preference column. Tick the countries of origin that get a preference in this invoice: EU countries get MSA, GB gets GBMTL, TR gets TRMTL. If you tick none, no item gets a preference.",
     },
     "msa_no_eu": {
-        "sq": "Asnjë artikull nuk ka origjinë nga BE-ja ose GB, prandaj nuk ka preferencë.",
-        "en": "No item comes from the EU or GB, so there is no preference.",
+        "sq": "Asnjë artikull nuk ka origjinë nga BE-ja, GB ose TR, prandaj nuk ka preferencë.",
+        "en": "No item comes from the EU, GB or TR, so there is no preference.",
     },
     "msa_outside_eu": {
-        "sq": "Pa preferencë (jashtë BE-së dhe GB): {countries}",
-        "en": "No preference (outside the EU and GB): {countries}",
+        "sq": "Pa preferencë (jashtë BE-së, GB dhe TR): {countries}",
+        "en": "No preference (outside the EU, GB and TR): {countries}",
     },
     "constants_hint": {
         "sq": "Këto vlera janë të njëjta për çdo artikull. Ndryshojini vetëm nëse e dini që duhet.",
@@ -104,8 +104,8 @@ TEXTS = {
     "result_title": {"sq": "XML u krijua me sukses", "en": "The XML was created"},
     "stat_items": {"sq": "Artikuj", "en": "Items"},
     "stat_msa": {
-        "sq": "Artikuj me preferencë (MSA / GBMTL)",
-        "en": "Items with a preference (MSA / GBMTL)",
+        "sq": "Artikuj me preferencë (MSA / GBMTL / TRMTL)",
+        "en": "Items with a preference (MSA / GBMTL / TRMTL)",
     },
     "stat_total": {"sq": "Totali", "en": "Total"},
     "stat_gross": {"sq": "Pesha bruto", "en": "Gross weight"},
@@ -130,8 +130,8 @@ TEXTS = {
         "en": "The code in «Other» must have exactly {digits} digits.",
     },
     "msa_title": {
-        "sq": "Preferenca (MSA / GBMTL)",
-        "en": "Preference (MSA / GBMTL)",
+        "sq": "Preferenca (MSA / GBMTL / TRMTL)",
+        "en": "Preference (MSA / GBMTL / TRMTL)",
     },
     "save_hint": {
         "sq": "Pasi të klikoni «Krijo XML-in», programi ju pyet ku ta ruani skedarin.",
@@ -177,16 +177,16 @@ TEXTS = {
     },
     "warn_empty": {"sq": "Rreshti {row}: kolona \"{column}\" është bosh.", "en": "Row {row}: column \"{column}\" is empty."},
     "warn_no_pref_column": {
-        "sq": "Nuk ka kolonë preference dhe nuk u shënua asnjë vend, prandaj asnjë artikull nuk ka MSA ose GBMTL.",
-        "en": "There is no preference column and no country was ticked, so no item gets MSA or GBMTL.",
+        "sq": "Nuk ka kolonë preference dhe nuk u shënua asnjë vend, prandaj asnjë artikull nuk ka MSA, GBMTL ose TRMTL.",
+        "en": "There is no preference column and no country was ticked, so no item gets MSA, GBMTL or TRMTL.",
     },
     "warn_msa_country_not_eu": {
-        "sq": "{country} nuk është në BE dhe nuk është GB, prandaj nuk merr preferencë.",
-        "en": "{country} is not in the EU and is not GB, so it gets no preference.",
+        "sq": "{country} nuk është në BE, GB apo TR, prandaj nuk merr preferencë.",
+        "en": "{country} is not in the EU, GB or TR, so it gets no preference.",
     },
     "warn_pref_not_eu": {
-        "sq": "Rreshti {row}: vlera është PO, por origjina {country} nuk është nga BE-ja ose GB, prandaj preferenca nuk u vendos.",
-        "en": "Row {row}: the value means YES, but origin {country} is not in the EU or GB, so no preference was set.",
+        "sq": "Rreshti {row}: vlera është PO, por origjina {country} nuk është nga BE-ja, GB ose TR, prandaj preferenca nuk u vendos.",
+        "en": "Row {row}: the value means YES, but origin {country} is not in the EU, GB or TR, so no preference was set.",
     },
     "warn_unknown_indicator": {
         "sq": 'Rreshti {row}: vlera "{value}" në kolonën e preferencës nuk njihet, u trajtua si pa preferencë.',

@@ -75,9 +75,10 @@ EU_COUNTRIES = {
     "ES", "SE",
 }
 
-# Preference code per eligible origin: EU goods get MSA, UK goods GBMTL.
+# Preference code per eligible origin: EU goods get MSA, UK goods GBMTL, Turkish goods TRMTL.
 PREFERENCE_CODES = {code: "MSA" for code in EU_COUNTRIES}
 PREFERENCE_CODES["GB"] = "GBMTL"
+PREFERENCE_CODES["TR"] = "TRMTL"
 
 # The old ASYCUDA client only knows GB for the United Kingdom.
 COUNTRY_ALIASES = {"UK": "GB"}
@@ -106,7 +107,7 @@ class Options:
     extended_procedure: str
     column_names: dict = field(default_factory=lambda: dict(DEFAULT_COLUMN_NAMES))
     positive_indicators: list = field(default_factory=lambda: list(DEFAULT_POSITIVE_INDICATORS))
-    # Used only when the sheet has no preference column: origins that get MSA (GB: GBMTL).
+    # Used only when the sheet has no preference column: origins that get MSA (GB: GBMTL, TR: TRMTL).
     msa_countries: list = field(default_factory=list)
     constants: dict = field(default_factory=lambda: dict(DEFAULT_CONSTANTS))
 
