@@ -12,16 +12,22 @@ TEXTS = {
     "field_pesha_bruto": {"sq": "Pesha bruto", "en": "Gross weight"},
     "field_pesha_neto": {"sq": "Pesha neto", "en": "Net weight"},
     "field_origjina": {"sq": "Vendi i origjinës", "en": "Country of origin"},
-    "field_pref": {"sq": "Preferenca (MSA)", "en": "Preference (MSA)"},
+    "field_pref": {
+        "sq": "Preferenca (MSA / GBMTL)",
+        "en": "Preference (MSA / GBMTL)",
+    },
     "field_kodi_tarifor": {"sq": "Kodi tarifor", "en": "Tariff code"},
-    "q_precision": {"sq": "Precision 1 — 00 apo 90?", "en": "Precision 1 — 00 or 90?"},
+    "q_precision": {
+        "sq": "Precision 1 (zakonisht 00 ose 90)",
+        "en": "Precision 1 (usually 00 or 90)",
+    },
     "q_extended": {
-        "sq": "Procedura doganore e zgjeruar — 1000 apo 4000?",
-        "en": "Extended customs procedure — 1000 or 4000?",
+        "sq": "Procedura doganore e zgjeruar (zakonisht 1000 ose 4000)",
+        "en": "Extended customs procedure (usually 1000 or 4000)",
     },
     "indicators_hint": {
-        "sq": "MSA vendoset vetëm kur treguesi është pozitiv DHE vendi i origjinës është në BE.",
-        "en": "MSA is set only when the indicator is positive AND the country of origin is in the EU.",
+        "sq": "Preferenca vendoset vetëm kur vlera është PO dhe origjina është nga BE-ja (merr MSA) ose GB (merr GBMTL). Vendet e tjera nuk marrin preferencë.",
+        "en": "A preference is set only when the value means YES and the origin is in the EU (gets MSA) or GB (gets GBMTL). Other countries get no preference.",
     },
     "constants": {"sq": "Vlerat fikse", "en": "Fixed values"},
     "constants_title": {"sq": "Vlerat fikse të çdo artikulli", "en": "Fixed values for every item"},
@@ -32,23 +38,25 @@ TEXTS = {
     "excel_filter": {"sq": "Skedarë Excel", "en": "Excel files"},
     "all_files": {"sq": "Të gjithë skedarët", "en": "All files"},
     "need_file": {"sq": "Zgjidhni fillimisht skedarin Excel.", "en": "Choose the Excel file first."},
-    "need_precision": {"sq": "Zgjidhni Precision_1: 00 apo 90.", "en": "Choose Precision_1: 00 or 90."},
-    "need_extended": {
-        "sq": "Zgjidhni Extended_customs_procedure: 1000 apo 4000.",
-        "en": "Choose Extended_customs_procedure: 1000 or 4000.",
+    "need_precision": {
+        "sq": "Zgjidhni Precision 1: 00, 90 ose shkruani një kod tjetër te «Tjetër».",
+        "en": "Choose Precision 1: 00, 90, or type another code in «Other».",
     },
-    "overwrite": {"sq": "Skedari {name} ekziston. Ta zëvendësoj?", "en": "{name} already exists. Replace it?"},
+    "need_extended": {
+        "sq": "Zgjidhni procedurën e zgjeruar: 1000, 4000 ose shkruani një kod tjetër te «Tjetër».",
+        "en": "Choose the extended procedure: 1000, 4000, or type another code in «Other».",
+    },
     "error": {"sq": "Gabim", "en": "Error"},
     "done": {"sq": "U krye", "en": "Done"},
     # Window
     "subtitle": {
-        "sq": "Krijoni DUD-in XML nga përkthimi në Excel, në 3 hapa.",
-        "en": "Create the DUD XML from the Excel translation in 3 steps.",
+        "sq": "Krijoni DUD-in XML nga Excel-i i përkthimit, në 4 hapa.",
+        "en": "Create the DUD XML from the translation Excel in 4 steps.",
     },
     "step1_title": {"sq": "Zgjidhni Excel-in e përkthimit", "en": "Choose the translation Excel file"},
     "step1_hint": {
-        "sq": "Skedari që dërgon furnitori (perkthimi), p.sh. Perkthimi_Bosch_KS.xlsx.",
-        "en": "The file the supplier sends (perkthim), e.g. Perkthimi_Bosch_KS.xlsx.",
+        "sq": "Klikoni «Zgjidh skedarin» dhe gjeni Excel-in e përkthimit për këtë faturë (p.sh. Perkthimi_Bosch_KS.xlsx). Nëse e keni ndryshuar Excel-in, ruajeni para se ta zgjidhni.",
+        "en": "Click «Choose file» and find the translation Excel for this invoice (e.g. Perkthimi_Bosch_KS.xlsx). If you changed the Excel, save it before choosing it.",
     },
     "choose_file": {"sq": "Zgjidh skedarin", "en": "Choose file"},
     "no_file": {"sq": "Asnjë skedar i zgjedhur", "en": "No file chosen"},
@@ -61,36 +69,35 @@ TEXTS = {
     },
     "step2_title": {"sq": "Kontrolloni kolonat", "en": "Check the columns"},
     "step2_hint": {
-        "sq": "Programi i gjen kolonat sipas titullit në rreshtin e parë të Excel-it. Nëse diçka del me ✗, zgjidhni titullin e saktë nga lista. Programi i mban mend për herën tjetër.",
-        "en": "The app finds each column by its title in the Excel's first row. If one shows ✗, pick the right title from the list. The app remembers it for next time.",
+        "sq": "Programi e gjen secilën kolonë sipas titullit të saj në Excel. ✓ do të thotë që kolona u gjet. Nëse del ✗, klikoni shigjetën ▾ në atë rresht dhe zgjidhni titullin e saktë nga lista. Kolonat «(opsionale)» mund të mungojnë. Programi i mban mend zgjedhjet për herën tjetër.",
+        "en": "The app finds each column by its title in the Excel. ✓ means the column was found. If you see ✗, click the ▾ arrow on that row and pick the right title from the list. Columns marked «(optional)» may be missing. The app remembers your choices for next time.",
     },
     "found": {"sq": "U gjet", "en": "Found"},
     "not_found": {"sq": "Nuk u gjet", "en": "Not found"},
     "not_used": {"sq": "Nuk ka, s'ka problem", "en": "Not there, that's fine"},
     "step3_title": {"sq": "Përgjigjuni pyetjeve", "en": "Answer the questions"},
     "step3_hint": {
-        "sq": "Këto vlera vendosen në çdo artikull të DUD-it.",
-        "en": "These values go into every item of the DUD.",
+        "sq": "Këto vlera vendosen në çdo artikull të DUD-it. Programi i pyet çdo herë, sepse mund të ndryshojnë nga fatura në faturë.",
+        "en": "These values go into every item of the DUD. The app asks every time, because they can change from invoice to invoice.",
     },
     "msa_need_file": {"sq": "Zgjidhni fillimisht Excel-in për të parë opsionet e MSA.",
                       "en": "Choose the Excel file first to see the MSA options."},
     "msa_with_column": {
-        "sq": "Kolona \"{column}\" tregon ku vendoset MSA. Cilat vlera në të do të thonë PO? (të ndara me presje)",
-        "en": "The \"{column}\" column shows where MSA goes. Which values in it mean YES? (comma separated)",
+        "sq": 'Kolona "{column}" tregon cilët artikuj marrin preferencë. Cilat vlera në të do të thonë PO? (të ndara me presje)',
+        "en": 'The "{column}" column shows which items get a preference. Which values in it mean YES? (comma separated)',
     },
     "msa_pick_countries": {
-        "sq": "Ky Excel nuk ka kolonë për MSA. Shënoni vendet e origjinës që marrin MSA:",
-        "en": "This Excel has no MSA column. Tick the countries of origin that get MSA:",
+        "sq": "Ky Excel nuk ka kolonë për preferencën. Shënoni vendet e origjinës që marrin preferencë në këtë faturë: vendet e BE-së marrin MSA, GB merr GBMTL. Nëse nuk shënoni asnjë, asnjë artikull nuk merr preferencë.",
+        "en": "This Excel has no preference column. Tick the countries of origin that get a preference in this invoice: EU countries get MSA, GB gets GBMTL. If you tick none, no item gets a preference.",
     },
     "msa_no_eu": {
-        "sq": "Asnjë artikull nuk ka origjinë nga BE, prandaj nuk ka MSA.",
-        "en": "No item has an EU origin, so there is no MSA.",
+        "sq": "Asnjë artikull nuk ka origjinë nga BE-ja ose GB, prandaj nuk ka preferencë.",
+        "en": "No item comes from the EU or GB, so there is no preference.",
     },
-    "msa_outside_eu": {"sq": "Jashtë BE-së (pa MSA): {countries}", "en": "Outside the EU (no MSA): {countries}"},
-    "save_to": {"sq": "XML do të ruhet në: {folder}", "en": "The XML will be saved in: {folder}"},
-    "save_to_default": {"sq": "XML do të ruhet në të njëjtën dosje me Excel-in.",
-                        "en": "The XML will be saved in the same folder as the Excel file."},
-    "change_folder": {"sq": "Ndrysho dosjen", "en": "Change folder"},
+    "msa_outside_eu": {
+        "sq": "Pa preferencë (jashtë BE-së dhe GB): {countries}",
+        "en": "No preference (outside the EU and GB): {countries}",
+    },
     "constants_hint": {
         "sq": "Këto vlera janë të njëjta për çdo artikull. Ndryshojini vetëm nëse e dini që duhet.",
         "en": "These are the same for every item. Only change them if you know they must change.",
@@ -102,7 +109,10 @@ TEXTS = {
     },
     "result_title": {"sq": "XML u krijua me sukses", "en": "The XML was created"},
     "stat_items": {"sq": "Artikuj", "en": "Items"},
-    "stat_msa": {"sq": "Artikuj me MSA", "en": "Items with MSA"},
+    "stat_msa": {
+        "sq": "Artikuj me preferencë (MSA / GBMTL)",
+        "en": "Items with a preference (MSA / GBMTL)",
+    },
     "stat_total": {"sq": "Totali", "en": "Total"},
     "stat_gross": {"sq": "Pesha bruto", "en": "Gross weight"},
     "stat_net": {"sq": "Pesha neto", "en": "Net weight"},
@@ -113,23 +123,71 @@ TEXTS = {
     "warnings_title": {"sq": "Kontrolloni {count} gjëra", "en": "Check {count} things"},
     "open_folder": {"sq": "Hap dosjen", "en": "Open folder"},
     "close": {"sq": "Mbyll", "en": "Close"},
+    "q_code_hint": {
+        "sq": "Klikoni njërin nga butonat. Nëse kodi që ju duhet nuk është aty, klikoni «Tjetër» dhe shkruani kodin me {digits} shifra.",
+        "en": "Click one of the buttons. If the code you need is not there, click «Other» and type the {digits}-digit code.",
+    },
+    "other_code": {
+        "sq": "Tjetër:",
+        "en": "Other:",
+    },
+    "need_other_code": {
+        "sq": "Kodi te «Tjetër» duhet të ketë saktësisht {digits} shifra.",
+        "en": "The code in «Other» must have exactly {digits} digits.",
+    },
+    "msa_title": {
+        "sq": "Preferenca (MSA / GBMTL)",
+        "en": "Preference (MSA / GBMTL)",
+    },
+    "save_hint": {
+        "sq": "Pasi të klikoni «Krijo XML-in», programi ju pyet ku ta ruani skedarin.",
+        "en": "After you click «Create the XML», the app asks where to save the file.",
+    },
+    "save_title": {
+        "sq": "Ku ta ruaj XML-in?",
+        "en": "Where should the XML be saved?",
+    },
+    "xml_filter": {
+        "sq": "Skedarë XML",
+        "en": "XML files",
+    },
+    "step4_title": {
+        "sq": "Krijoni XML-in",
+        "en": "Create the XML",
+    },
+    "step4_line1": {
+        "sq": "Klikoni butonin e gjelbër «Krijo XML-in» poshtë djathtas.",
+        "en": "Click the green «Create the XML» button at the bottom right.",
+    },
+    "step4_line2": {
+        "sq": "Zgjidhni dosjen ku do ta ruani dhe klikoni «Save» (Ruaj). Emri i skedarit plotësohet vetë.",
+        "en": "Choose the folder to save it in and click Save. The file name is filled in for you.",
+    },
+    "step4_line3": {
+        "sq": "Krahasoni numrin e artikujve, totalin dhe peshat me rreshtin e totaleve në Excel.",
+        "en": "Compare the number of items, the total and the weights with the totals row in Excel.",
+    },
+    "step4_line4": {
+        "sq": "Nëse programi shfaq gjëra për t'u kontrolluar (⚠), lexojini para se ta ngarkoni XML-in në ASYCUDA.",
+        "en": "If the app lists things to check (⚠), read them before loading the XML into ASYCUDA.",
+    },
     # Warnings
     "warn_empty": {"sq": "Rreshti {row}: kolona \"{column}\" është bosh.", "en": "Row {row}: column \"{column}\" is empty."},
     "warn_no_pref_column": {
-        "sq": "Nuk ka kolonë preference dhe nuk u dha asnjë vend për MSA, prandaj asnjë artikull nuk ka MSA.",
-        "en": "There is no preference column and no MSA countries were given, so no item gets MSA.",
+        "sq": "Nuk ka kolonë preference dhe nuk u shënua asnjë vend, prandaj asnjë artikull nuk ka MSA ose GBMTL.",
+        "en": "There is no preference column and no country was ticked, so no item gets MSA or GBMTL.",
     },
     "warn_msa_country_not_eu": {
-        "sq": "{country} nuk është vend i BE-së, prandaj nuk merr MSA.",
-        "en": "{country} is not an EU country, so it does not get MSA.",
+        "sq": "{country} nuk është në BE dhe nuk është GB, prandaj nuk merr preferencë.",
+        "en": "{country} is not in the EU and is not GB, so it gets no preference.",
     },
     "warn_pref_not_eu": {
-        "sq": "Rreshti {row}: treguesi është pozitiv por origjina {country} nuk është në BE, MSA nuk u vendos.",
-        "en": "Row {row}: the indicator is positive but origin {country} is not in the EU, so MSA was not set.",
+        "sq": "Rreshti {row}: vlera është PO, por origjina {country} nuk është nga BE-ja ose GB, prandaj preferenca nuk u vendos.",
+        "en": "Row {row}: the value means YES, but origin {country} is not in the EU or GB, so no preference was set.",
     },
     "warn_unknown_indicator": {
-        "sq": "Rreshti {row}: vlera \"{value}\" në kolonën e preferencës nuk njihet, u trajtua si jo MSA.",
-        "en": "Row {row}: value \"{value}\" in the preference column is not recognised, treated as no MSA.",
+        "sq": 'Rreshti {row}: vlera "{value}" në kolonën e preferencës nuk njihet, u trajtua si pa preferencë.',
+        "en": 'Row {row}: value "{value}" in the preference column is not recognised, treated as no preference.',
     },
     # Errors
     "err_xls": {
@@ -162,10 +220,13 @@ TEXTS = {
         "en": "Row {row}, column \"{column}\": \"{value}\" is not a number.",
     },
     "err_no_rows": {"sq": "Nuk u gjet asnjë artikull në fletën \"{sheet}\".", "en": "No items were found in sheet \"{sheet}\"."},
-    "err_precision": {"sq": "Precision_1 duhet të jetë 00 ose 90.", "en": "Precision_1 must be 00 or 90."},
+    "err_precision": {
+        "sq": "Precision 1 duhet të ketë 2 shifra (p.sh. 00 ose 90).",
+        "en": "Precision 1 must have 2 digits (e.g. 00 or 90).",
+    },
     "err_extended": {
-        "sq": "Extended_customs_procedure duhet të jetë 1000 ose 4000.",
-        "en": "Extended_customs_procedure must be 1000 or 4000.",
+        "sq": "Procedura e zgjeruar duhet të ketë 4 shifra (p.sh. 1000 ose 4000).",
+        "en": "The extended procedure must have 4 digits (e.g. 1000 or 4000).",
     },
 }
 

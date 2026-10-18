@@ -136,3 +136,35 @@ def test_optional_column_missing_from_sheet_is_ignored():
     # The remembered "Pref" name must not block a sheet that has no such column.
     result = core.convert(FIXTURES / "Perkthimi_Bosch_KS 21.xlsx", core.Options("00", "4000"))
     assert len(result.items) == 7 and result.msa_count == 0
+
+
+def test_typed_codes_are_accepted_and_checked():
+    xml = core.convert(SAMPLE, core.Options("10", "4071")).xml
+    assert xml.count("<Precision_1>10</Precision_1>") == 22
+    assert xml.count("<Extended_customs_procedure>4071</Extended_customs_procedure>") == 22
+    for bad in (("0", "4000"), ("000", "4000"), ("ab", "4000"), ("00", "400"), ("00", "40000")):
+        with pytest.raises(core.ConversionError):
+            core.convert(SAMPLE, core.Options(*bad))
+
+
+def test_uk_becomes_gb_and_gb_gets_gbmtl(tmp_path):
+    path = _make_sheet(tmp_path / "p.xlsx", [
+        ("K1", "Tekst", 1, 2, 1, 1, "uk", "Po", 1234),
+        ("K2", "Tekst", 1, 2, 1, 1, "GB", "Jo", 1234),
+        ("K3", "Tekst", 1, 2, 1, 1, "DE", "Po", 1234),
+    ])
+    result = core.convert(path, core.Options("00", "4000"))
+    assert [(i.country, i.preference_code) for i in result.items] == [("GB", "GBMTL"), ("GB", ""), ("DE", "MSA")]
+    assert "<Country_of_origin_code>UK" not in result.xml
+    assert result.xml.count("<Preference_code>GBMTL</Preference_code>") == 1
+    assert core.inspect_sheet(path, core.DEFAULT_COLUMN_NAMES).countries == ["GB", "DE"]
+
+
+def test_ticked_gb_gets_gbmtl_without_pref_column(tmp_path):
+    path = _make_sheet(tmp_path / "p.xlsx", [("K1", "Tekst", 1, 2, 1, 1, "UK", 1234),
+                                             ("K2", "Tekst", 1, 2, 1, 1, "BG", 1234)],
+                       headers=("Kodi", "Perkthim", "Sasia", "Totali", "Pesha neto", "Pesha bruto",
+                                "Origjina", "Kodi tarifor"))
+    result = core.convert(path, core.Options("00", "4000", msa_countries=["GB", "BG"]))
+    assert [i.preference_code for i in result.items] == ["GBMTL", "MSA"]
+    assert result.warnings == []
