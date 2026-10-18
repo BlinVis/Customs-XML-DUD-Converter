@@ -4,7 +4,6 @@ LANGUAGES = {"sq": "Shqip", "en": "English"}
 
 TEXTS = {
     "title": {"sq": "Perkthim → DUD XML (ASYCUDA)", "en": "Perkthim → DUD XML (ASYCUDA)"},
-    "optional": {"sq": "(opsionale)", "en": "(optional)"},
     "field_kodi": {"sq": "Kodi i artikullit", "en": "Article code"},
     "field_perkthim": {"sq": "Përkthimi (përshkrimi)", "en": "Translation (description)"},
     "field_sasia": {"sq": "Sasia", "en": "Quantity"},
@@ -63,17 +62,12 @@ TEXTS = {
     "step1_none": {"sq": "Klikoni butonin dhe zgjidhni skedarin Excel.", "en": "Click the button and pick the Excel file."},
     "file_ready": {"sq": "Skedari u lexua (fleta \"{sheet}\"). Të gjitha kolonat u gjetën.",
                    "en": "File read (sheet \"{sheet}\"). All columns were found."},
-    "columns_missing_short": {
-        "sq": "Disa kolona nuk u gjetën. Rregullojini te hapi 2.",
-        "en": "Some columns were not found. Fix them in step 2.",
-    },
     "step2_title": {"sq": "Kontrolloni kolonat", "en": "Check the columns"},
     "step2_hint": {
-        "sq": "Programi e gjen secilën kolonë sipas titullit të saj në Excel. ✓ do të thotë që kolona u gjet. Nëse del ✗, klikoni shigjetën ▾ në atë rresht dhe zgjidhni titullin e saktë nga lista. Kolonat «(opsionale)» mund të mungojnë. Programi i mban mend zgjedhjet për herën tjetër.",
-        "en": "The app finds each column by its title in the Excel. ✓ means the column was found. If you see ✗, click the ▾ arrow on that row and pick the right title from the list. Columns marked «(optional)» may be missing. The app remembers your choices for next time.",
+        "sq": "Programi e gjen secilën kolonë sipas titullit të saj në Excel. ✓ do të thotë që kolona u gjet. Nëse del ⚠, klikoni shigjetën ▾ në atë rresht dhe zgjidhni titullin e saktë nga lista. Nëse Excel-i vërtet nuk e ka atë kolonë, XML krijohet përsëri, por ajo e dhënë mbetet bosh. Programi i mban mend zgjedhjet për herën tjetër.",
+        "en": "The app finds each column by its title in the Excel. ✓ means the column was found. If you see ⚠, click the ▾ arrow on that row and pick the right title from the list. If the Excel really doesn't have that column, the XML is still created, but that data stays empty. The app remembers your choices for next time.",
     },
     "found": {"sq": "U gjet", "en": "Found"},
-    "not_found": {"sq": "Nuk u gjet", "en": "Not found"},
     "not_used": {"sq": "Nuk ka, s'ka problem", "en": "Not there, that's fine"},
     "step3_title": {"sq": "Përgjigjuni pyetjeve", "en": "Answer the questions"},
     "step3_hint": {
@@ -171,7 +165,16 @@ TEXTS = {
         "sq": "Nëse programi shfaq gjëra për t'u kontrolluar (⚠), lexojini para se ta ngarkoni XML-in në ASYCUDA.",
         "en": "If the app lists things to check (⚠), read them before loading the XML into ASYCUDA.",
     },
+    "columns_missing_short": {
+        "sq": "Disa kolona nuk u gjetën. XML krijohet, por ato të dhëna mbeten bosh. Shihni hapin 2.",
+        "en": "Some columns were not found. The XML is still created, but that data stays empty. See step 2.",
+    },
+    "will_be_empty": {"sq": "Nuk u gjet, do të mbetet bosh", "en": "Not found, will stay empty"},
     # Warnings
+    "warn_column_missing": {
+        "sq": "Kolona \"{column}\" ({field}) nuk është në Excel, prandaj kjo e dhënë mbetet bosh në çdo artikull.",
+        "en": "Column \"{column}\" ({field}) is not in the Excel, so this data is left empty in every item.",
+    },
     "warn_empty": {"sq": "Rreshti {row}: kolona \"{column}\" është bosh.", "en": "Row {row}: column \"{column}\" is empty."},
     "warn_no_pref_column": {
         "sq": "Nuk ka kolonë preference dhe nuk u shënua asnjë vend, prandaj asnjë artikull nuk ka MSA ose GBMTL.",
@@ -199,17 +202,9 @@ TEXTS = {
         "sq": "Skedari nuk mund të lexohet ({detail}). A është i dëmtuar apo nuk është skedar Excel?",
         "en": "The file can't be read ({detail}). Is it damaged or not an Excel file?",
     },
-    "err_column_name_empty": {
-        "sq": "Shkruani emrin e kolonës: {field}.",
-        "en": "Enter the column name: {field}.",
-    },
     "err_no_header": {
         "sq": "Asnjë nga kolonat {names} nuk u gjet në Excel.",
         "en": "None of the columns {names} were found in the Excel file.",
-    },
-    "err_columns_missing": {
-        "sq": "Këto kolona nuk u gjetën në fletën \"{sheet}\": {missing}.\nKolonat që ka fleta: {found}",
-        "en": "These columns were not found in sheet \"{sheet}\": {missing}.\nColumns the sheet has: {found}",
     },
     "err_formula": {
         "sq": "Rreshti {row}, kolona \"{column}\": formula nuk mund të llogaritet. Hapeni skedarin në Excel, ruajeni dhe provoni përsëri.",
