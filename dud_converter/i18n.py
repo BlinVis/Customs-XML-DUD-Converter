@@ -121,6 +121,14 @@ TEXTS = {
         "sq": "Klikoni njërin nga butonat. Nëse kodi që ju duhet nuk është aty, klikoni «Tjetër» dhe shkruani kodin me {digits} shifra.",
         "en": "Click one of the buttons. If the code you need is not there, click «Other» and type the {digits}-digit code.",
     },
+    "q_precision_auto": {
+        "sq": "Merre automatikisht nga TARIK 2025 sipas kodit tarifor (rekomandohet)",
+        "en": "Take it automatically from TARIK 2025 by tariff code (recommended)",
+    },
+    "q_precision_auto_hint": {
+        "sq": "Kur kjo është e shënuar, programi vendos 00, 90 etj. për çdo artikull sipas TARIK-ut. Butonat më poshtë duhen vetëm për kodet që nuk janë në TARIK ose që kanë disa mundësi; programi ju tregon kur duhen.",
+        "en": "When this is ticked, the app sets 00, 90 etc. for each item from TARIK. The buttons below are only needed for codes that are not in TARIK or have several options; the app tells you when.",
+    },
     "other_code": {
         "sq": "Tjetër:",
         "en": "Other:",
@@ -192,7 +200,19 @@ TEXTS = {
         "sq": 'Rreshti {row}: vlera "{value}" në kolonën e preferencës nuk njihet, u trajtua si pa preferencë.',
         "en": 'Row {row}: value "{value}" in the preference column is not recognised, treated as no preference.',
     },
+    "warn_precision_choices": {
+        "sq": "Rreshti {row}: kodi {code} ka disa mundësi në TARIK ({choices}), u vendos {value}. Kontrollojeni.",
+        "en": "Row {row}: code {code} has several options in TARIK ({choices}), {value} was used. Please check it.",
+    },
+    "warn_precision_not_in_tarik": {
+        "sq": "Rreshti {row}: kodi {code} nuk është në TARIK, u vendos {value}.",
+        "en": "Row {row}: code {code} is not in TARIK, {value} was used.",
+    },
     # Errors
+    "err_precision_undecided": {
+        "sq": "Për këta artikuj TARIK nuk e jep 00/90 (kodi nuk është në TARIK ose ka disa mundësi):\n{rows}\n\nTe hapi 3, te Precision 1, zgjidhni 00, 90 ose shkruani kodin që do të vendoset për ta.",
+        "en": "TARIK doesn't give 00/90 for these items (the code isn't in TARIK or has several options):\n{rows}\n\nIn step 3, under Precision 1, choose 00, 90 or type the code to use for them.",
+    },
     "err_xls": {
         "sq": "Skedarët e vjetër .xls nuk lexohen. Hapeni në Excel dhe ruajeni si .xlsx.",
         "en": "Old .xls files can't be read. Open it in Excel and save it as .xlsx.",

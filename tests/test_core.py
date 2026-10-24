@@ -195,3 +195,32 @@ def test_turkey_gets_trmtl(tmp_path):
     result = core.convert(path, core.Options("00", "4000"))
     assert [(i.country, i.preference_code) for i in result.items] == [("TR", "TRMTL"), ("TR", "")]
     assert result.warnings == []
+
+
+def test_precision_from_tarik():
+    assert core.precision_from_tarik("87088035") == "00"
+    assert core.precision_from_tarik("84212300") == "90"  # 10 is only for civil aviation
+    assert core.precision_from_tarik("04014010") == ""    # 10 cream / 90 milk: the user decides
+    assert core.precision_from_tarik("12345678") == ""
+    assert core.tarik_suffixes("22029911") == (["11", "19", "91", "99"], False)
+
+
+def test_automatic_precision_reproduces_bilstein_dud():
+    result = core.convert(SAMPLE, core.Options("", "4000", precision_auto=True))
+    assert result.xml == reference_xml() and result.warnings == []
+
+
+def test_automatic_precision_needs_an_answer_only_when_tarik_cant_decide(tmp_path):
+    path = _make_sheet(tmp_path / "p.xlsx", [
+        ("K1", "Tekst", 1, 2, 1, 1, "DE", "Jo", 87088035),
+        ("K2", "Tekst", 1, 2, 1, 1, "DE", "Jo", "8421 23 00"),
+        ("K3", "Tekst", 1, 2, 1, 1, "DE", "Jo", "0401 40 10"),
+        ("K4", "Tekst", 1, 2, 1, 1, "DE", "Jo", 12345678),
+    ])
+    with pytest.raises(core.ConversionError) as exc:
+        core.convert(path, core.Options("", "4000", precision_auto=True))
+    assert exc.value.key == "err_precision_undecided"
+    assert exc.value.params["rows"] == "4 (04014010: 10/90)\n5 (12345678)"
+    result = core.convert(path, core.Options("10", "4000", precision_auto=True))
+    assert [i.precision_1 for i in result.items] == ["00", "90", "10", "10"]
+    assert [w.key for w in result.warnings] == ["warn_precision_choices", "warn_precision_not_in_tarik"]
