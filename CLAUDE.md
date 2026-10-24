@@ -38,8 +38,14 @@ skills, so the UI must stay simple, step-by-step and bilingual (Albanian default
 - `Amount_foreign_currency` = **Totali only, never "Totali me zbritje"**, rounded to 2 decimals.
   Formulas (`=E2*D2`) use Excel's cached value, else a small safe evaluator (+-*/, SUM, ROUND).
   Text numbers like `1.234,56 €` are parsed.
-- `Precision_1` (00/90) and `Extended_customs_procedure` (1000/4000) are asked every time, no default;
-  the user can also type any other 2-digit / 4-digit code.
+- `Precision_1` is by default **automatic from TARIK 2025** (`dud_converter/tarik_data.py`, built
+  from the user's tariff-book PDF by `tools/build_tarik.py`): the 10-digit "Kodi i mallrave" = 8-digit
+  tariff code + 2-digit suffix. One suffix → used; only 10 "civil aviation" / 90 "others" → 90; several
+  or not in TARIK → the user's 00/90/typed answer with a warning, or `err_precision_undecided` listing
+  the rows if they gave none. Note: the Bosch hand DUD used 00 where TARIK only has 10/90.
+  Unticking "automatic" makes the answer apply to every item (old behaviour).
+- `Extended_customs_procedure` (1000/4000) is asked every time, no default; the user can also type
+  any other 2-digit / 4-digit code for either question.
 - Origin codes are upper-cased and `UK` is written as `GB` (the old ASYCUDA has no UK).
 - **MSA** (`Preference_code`): only for EU origin countries; GB origins get `GBMTL` and TR (Turkey)
   origins `TRMTL` instead (user's rules), handled the same way (indicator column or ticked). With an indicator column, positive values

@@ -126,6 +126,7 @@ class App(tk.Tk):
         self.precision_var = tk.StringVar(value="")
         self.extended_var = tk.StringVar(value="")
         self.precision_other = tk.StringVar(value="")
+        self.precision_auto = tk.BooleanVar(value=True)  # Precision_1 from TARIK per item
         self.extended_other = tk.StringVar(value="")
         saved_cols = self.settings.get("column_names", {})
         self.column_vars = {
@@ -289,6 +290,11 @@ class App(tk.Tk):
             row = tk.Frame(c, bg=CARD)
             row.pack(fill="x", pady=(0, 12))
             self._label(row, self.tr(label_key), size=11, bold=True).pack(anchor="w")
+            if var is self.precision_var:
+                ttk.Checkbutton(row, text=self.tr("q_precision_auto"), variable=self.precision_auto).pack(
+                    anchor="w", pady=(4, 0))
+                self._label(row, self.tr("q_precision_auto_hint"), color=MUTED, wraplength=780).pack(
+                    anchor="w", pady=(2, 0))
             self._label(row, self.tr(hint_key, digits=digits), color=MUTED, wraplength=780).pack(
                 anchor="w", pady=(2, 6))
             buttons = tk.Frame(row, bg=CARD)
@@ -460,10 +466,14 @@ class App(tk.Tk):
         if not excel:
             messagebox.showwarning(self.tr("missing_title"), self.tr("need_file"))
             return
-        precision = self._answer(self.precision_var, self.precision_other, core.PRECISION_1_DIGITS,
-                                 "need_precision")
-        if precision is None:
-            return
+        auto = self.precision_auto.get()
+        if auto and not self.precision_var.get():
+            precision = ""  # only needed if TARIK can't decide a code; convert() says so
+        else:
+            precision = self._answer(self.precision_var, self.precision_other, core.PRECISION_1_DIGITS,
+                                     "need_precision")
+            if precision is None:
+                return
         extended = self._answer(self.extended_var, self.extended_other, core.EXTENDED_PROCEDURE_DIGITS,
                                 "need_extended")
         if extended is None:
@@ -472,6 +482,7 @@ class App(tk.Tk):
 
         options = core.Options(
             precision_1=precision,
+            precision_auto=auto,
             extended_procedure=extended,
             column_names=self._column_names(),
             positive_indicators=[s.strip() for s in self.indicators_var.get().split(",") if s.strip()],

@@ -20,6 +20,8 @@ from xml.sax.saxutils import escape
 import openpyxl
 from openpyxl.utils import column_index_from_string, get_column_letter
 
+from .tarik_data import DATA as _TARIK_DATA
+
 # Logical columns read from the perkthim sheet: (key, expected). Every column may be
 # missing from a sheet; a missing expected one is left empty with a warning.
 FIELDS = [
@@ -103,8 +105,11 @@ class Warning_:
 
 @dataclass
 class Options:
+    # With precision_auto, Precision_1 comes from TARIK per item and precision_1 is only
+    # used for codes TARIK can't decide (may then be "" if every code is decided).
     precision_1: str
     extended_procedure: str
+    precision_auto: bool = False
     column_names: dict = field(default_factory=lambda: dict(DEFAULT_COLUMN_NAMES))
     positive_indicators: list = field(default_factory=lambda: list(DEFAULT_POSITIVE_INDICATORS))
     # Used only when the sheet has no preference column: origins that get MSA (GB: GBMTL, TR: TRMTL).
@@ -116,6 +121,7 @@ class Options:
 class Item:
     row: int
     commodity_code: str
+    precision_1: str
     preference_code: str
     country: str
     description: str
@@ -187,6 +193,31 @@ def normalize_country(value) -> str:
 
 def is_code(value, digits: int) -> bool:
     return isinstance(value, str) and len(value) == digits and value.isascii() and value.isdigit()
+
+
+_TARIK = None
+
+
+def tarik_suffixes(code: str):
+    """(suffixes listed in TARIK 2025 for an 8-digit code, aviation pair?); ([], False) if absent."""
+    global _TARIK
+    if _TARIK is None:
+        _TARIK = {}
+        for line in _TARIK_DATA.splitlines():
+            parts = line.split()
+            _TARIK[parts[0]] = (parts[1].split(","), len(parts) > 2)
+    return _TARIK.get(code, ([], False))
+
+
+def precision_from_tarik(code: str) -> str:
+    """The Precision_1 TARIK gives for a code, or "" when it has none or several.
+
+    When the only choices are 10 "for civil aviation" and 90 "others", 90 is used.
+    """
+    suffixes, aviation = tarik_suffixes(code)
+    if aviation:
+        return "90"
+    return suffixes[0] if len(suffixes) == 1 else ""
 
 
 def format_number(value: float, decimals: int) -> str:
@@ -393,7 +424,8 @@ def _find_columns(values_wb, column_names):
 
 
 def convert(excel_path, options: Options) -> Result:
-    if not is_code(options.precision_1, PRECISION_1_DIGITS):
+    if not is_code(options.precision_1, PRECISION_1_DIGITS) and not (
+            options.precision_auto and options.precision_1 == ""):
         raise ConversionError("err_precision")
     if not is_code(options.extended_procedure, EXTENDED_PROCEDURE_DIGITS):
         raise ConversionError("err_extended")
@@ -423,6 +455,7 @@ def convert(excel_path, options: Options) -> Result:
         return n
 
     items, warnings, indicator_values = [], [], {}
+    undecided = []  # rows TARIK can't decide when no fallback answer was given
     for key, expected in FIELDS:
         if expected and key not in cols:
             warnings.append(Warning_("warn_column_missing", {"column": names.get(key, ""), "field": key}))
@@ -473,6 +506,18 @@ def convert(excel_path, options: Options) -> Result:
         if not hs and "kodi_tarifor" in cols:
             warnings.append(Warning_("warn_empty", {"row": r, "column": names["kodi_tarifor"]}))
 
+        precision = options.precision_1
+        if options.precision_auto:
+            precision = precision_from_tarik(hs)
+            if not precision:
+                choices = "/".join(tarik_suffixes(hs)[0])
+                if not options.precision_1:
+                    undecided.append(f"{r} ({hs or '?'}{': ' + choices if choices else ''})")
+                key = "warn_precision_choices" if choices else "warn_precision_not_in_tarik"
+                warnings.append(Warning_(key, {"row": r, "code": hs or "?", "choices": choices,
+                                               "value": options.precision_1}))
+                precision = options.precision_1
+
         origin_raw = cell(r, "origjina")
         country = normalize_country(origin_raw)
         if not country and "origjina" in cols:
@@ -502,6 +547,7 @@ def convert(excel_path, options: Options) -> Result:
         items.append(Item(
             row=r,
             commodity_code=hs,
+            precision_1=precision,
             preference_code=pref_code,
             country=country,
             description=desc,
@@ -512,6 +558,8 @@ def convert(excel_path, options: Options) -> Result:
 
     if not items:
         raise ConversionError("err_no_rows", sheet=sheet_name)
+    if undecided:
+        raise ConversionError("err_precision_undecided", rows="\n".join(undecided))
 
     return Result(
         xml=build_xml(items, options),
@@ -554,7 +602,7 @@ def build_xml(items, options: Options) -> str:
         open_(2, "Tarification")
         open_(3, "HScode")
         el(4, "Commodity_code", it.commodity_code)
-        el(4, "Precision_1", options.precision_1)
+        el(4, "Precision_1", it.precision_1)
         close(3, "HScode")
         el(3, "Extended_customs_procedure", options.extended_procedure)
         el(3, "National_customs_procedure", c["National_customs_procedure"])
